@@ -5,7 +5,7 @@ const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR
 const BRAND = {
   name: "Solaris Eats",
   tagline: "Modern Flavors, Solar Vibes",
-  logoPath: "./public/logo.png",
+  logoPath: "public/logo.png",
   // Optional: override accent color quickly:
   // accent: "#f97316",
 };
