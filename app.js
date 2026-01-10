@@ -5,7 +5,7 @@ const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR
 const BRAND = {
   name: "Your Restaurant",
   tagline: "Tap an item for details",
-  logoPath: "./public/logo.png",
+  logoPath: "./logo.png",
   // Optional: override accent color quickly:
   // accent: "#f97316",
 };
@@ -289,11 +289,10 @@ function rowItem(item) {
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
         <p class="text-sm font-semibold tracking-tight">${escapeHtml(item.name)}</p>
-        ${
-          item.description
-            ? `<p class="mt-1 text-xs text-white/60 line-clamp-2">${escapeHtml(item.description)}</p>`
-            : `<p class="mt-1 text-xs text-white/40">Tap for details</p>`
-        }
+        ${item.description
+      ? `<p class="mt-1 text-xs text-white/60 line-clamp-2">${escapeHtml(item.description)}</p>`
+      : `<p class="mt-1 text-xs text-white/40">Tap for details</p>`
+    }
       </div>
       <div class="shrink-0 text-sm font-semibold">${escapeHtml(money(item.price))}</div>
     </div>
