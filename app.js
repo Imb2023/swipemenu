@@ -1,11 +1,10 @@
-
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR3G5xCBk0ZvgX_g8skVStCxUVztcCcwWQWkN_f1JK5iNmMJqNn1Cw/exec";
 
 // 2) Brand settings per client:
 const BRAND = {
-  name: "Solaris Eats",
-  tagline: "Modern Flavors, Solar Vibes",
-  logoPath: "public/logo.png",
+  name: "Your Restaurant",
+  tagline: "Tap an item for details",
+  logoPath: "./public/logo.png",
   // Optional: override accent color quickly:
   // accent: "#f97316",
 };
@@ -113,10 +112,10 @@ async function fetchMenu() {
       {
         id: "sp1",
         category: "Specials",
-        name: "Solaris Signature Tacos",
-        price: 12.99,
-        description: "Three gourmet tacos with flame-grilled chicken, mango salsa, and avocado crema.",
-        image: "./public/specials_tacos.png",
+        name: "2 Tacos + Drink",
+        price: 7.99,
+        description: "Any meat. Limited time.",
+        image: "",
         featured: true,
         available: true,
         order: 1,
@@ -124,10 +123,10 @@ async function fetchMenu() {
       {
         id: "sp2",
         category: "Specials",
-        name: "Tropical Smoothie Bowl",
-        price: 9.5,
-        description: "Pitaya and coconut base, topped with fresh dragon fruit, kiwi, and toasted coconut.",
-        image: "./public/specials_smoothie.png",
+        name: "Large Smoothie",
+        price: 5.5,
+        description: "All flavors. Ask about add-ons.",
+        image: "",
         featured: true,
         available: true,
         order: 2,
@@ -289,10 +288,11 @@ function rowItem(item) {
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
         <p class="text-sm font-semibold tracking-tight">${escapeHtml(item.name)}</p>
-        ${item.description
-      ? `<p class="mt-1 text-xs text-white/60 line-clamp-2">${escapeHtml(item.description)}</p>`
-      : `<p class="mt-1 text-xs text-white/40">Tap for details</p>`
-    }
+        ${
+          item.description
+            ? `<p class="mt-1 text-xs text-white/60 line-clamp-2">${escapeHtml(item.description)}</p>`
+            : `<p class="mt-1 text-xs text-white/40">Tap for details</p>`
+        }
       </div>
       <div class="shrink-0 text-sm font-semibold">${escapeHtml(money(item.price))}</div>
     </div>
