@@ -1,3 +1,7 @@
+# =========================
+# FILE: README.txt (quick setup)
+# =========================
+
 1) Put these files on hosting (Cloudflare Pages / Vercel / GitHub Pages):
    - index.html
    - app.js
@@ -13,7 +17,7 @@
 
 3) Brand:
    - Change BRAND.name, BRAND.tagline, BRAND.logoPath
-   - Optional: BRAND.accent = "#164BF9"
+   - Optional: BRAND.accent = "#F9C416"
 
 4) In your Google Sheet, columns must match:
    id, category, name, price, description, image, featured, available, order
