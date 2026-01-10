@@ -17,7 +17,7 @@
 
 3) Brand:
    - Change BRAND.name, BRAND.tagline, BRAND.logoPath
-   - Optional: BRAND.accent = "#f97316"
+   - Optional: BRAND.accent = "#164BF9"
 
 4) In your Google Sheet, columns must match:
    id, category, name, price, description, image, featured, available, order
