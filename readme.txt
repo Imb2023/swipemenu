@@ -1,7 +1,3 @@
-# =========================
-# FILE: README.txt (quick setup)
-# =========================
-
 1) Put these files on hosting (Cloudflare Pages / Vercel / GitHub Pages):
    - index.html
    - app.js
