@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b0b0d" />
+    <title>Menu</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" href="./public/favicon.ico" />
+    <link rel="apple-touch-icon" href="./public/icon-192.png" />
+
+    <!-- Tailwind CDN (fast MVP). For bigger scale, swap to Tailwind build later. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                "ui-sans-serif",
+                "system-ui",
+                "-apple-system",
+                "Segoe UI",
+                "Roboto",
+                "Inter",
+                "Arial",
+              ],
+            },
+            boxShadow: {
+              soft: "0 12px 32px rgba(0,0,0,.35)",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      /* Small, intentional CSS (keep it premium + readable) */
+      :root {
+        --bg: #0b0b0d;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.09);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.62);
+
+        /* Accent: change this per client */
+        --accent: #f97316; /* orange-500 */
+        --accent2: #fb923c; /* orange-400 */
+        --ring: rgba(249, 115, 22, 0.35);
+      }
+
+      body {
+        background: radial-gradient(
+            1200px 700px at 50% -10%,
+            rgba(249, 115, 22, 0.12),
+            transparent 55%
+          ),
+          radial-gradient(
+            900px 600px at 15% 10%,
+            rgba(255, 255, 255, 0.05),
+            transparent 60%
+          ),
+          var(--bg);
+        color: var(--text);
+      }
+
+      /* iOS safe-area padding */
+      .safe-top {
+        padding-top: env(safe-area-inset-top);
+      }
+      .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* Nice scrollbar (desktop) */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      /* Focus ring */
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+
+  <body class="font-sans antialiased">
+    <div class="min-h-dvh">
+      <!-- Header -->
+      <header class="safe-top sticky top-0 z-30">
+        <div
+          class="backdrop-blur-xl bg-black/35 border-b border-white/10"
+        >
+          <div class="mx-auto max-w-xl px-4 py-4">
+            <div class="flex items-center gap-3">
+              <img
+                id="brandLogo"
+                src="./public/logo.png"
+                alt="Logo"
+                class="h-10 w-10 rounded-xl object-cover ring-1 ring-white/10"
+              />
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h1
+                    id="brandName"
+                    class="text-base font-semibold tracking-tight"
+                  >
+                    Your Restaurant
+                  </h1>
+                  <span
+                    id="statusPill"
+                    class="hidden text-[11px] px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/70"
+                  >
+                    Updated
+                  </span>
+                </div>
+                <p id="brandTagline" class="text-xs text-white/60">
+                  Tap an item for details
+                </p>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="mt-3 flex items-center gap-2">
+              <div
+                class="flex-1 flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-3 py-2"
+              >
+                <svg
+                  class="h-4 w-4 text-white/60"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M21 21l-4.3-4.3m1.3-5.2a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <input
+                  id="searchInput"
+                  type="search"
+                  placeholder="Search menu…"
+                  class="w-full bg-transparent text-sm placeholder:text-white/40 outline-none"
+                  autocomplete="off"
+                />
+                <button
+                  id="clearSearch"
+                  class="hidden text-xs text-white/60 hover:text-white/90"
+                  type="button"
+                >
+                  Clear
+                </button>
+              </div>
+
+              <button
+                id="refreshBtn"
+                type="button"
+                class="shrink-0 rounded-2xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white/80 hover:bg-white/10 active:scale-[0.99]"
+                title="Refresh"
+              >
+                ↻
+              </button>
+            </div>
+
+            <!-- Category tabs -->
+            <div class="mt-3">
+              <div
+                id="categoryRow"
+                class="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]"
+              >
+                <!-- injected -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="mx-auto max-w-xl px-4 pb-28 pt-4 safe-bottom">
+        <!-- Specials -->
+        <section id="specialsSection" class="hidden">
+          <div class="flex items-end justify-between">
+            <h2 class="text-sm font-semibold tracking-tight">
+              🔥 Today’s Specials
+            </h2>
+            <span class="text-xs text-white/50">Limited time</span>
+          </div>
+
+          <div id="specialsGrid" class="mt-3 grid gap-3"></div>
+
+          <div class="mt-6 h-px bg-white/10"></div>
+        </section>
+
+        <!-- Menu list -->
+        <section class="mt-5">
+          <div class="flex items-end justify-between">
+            <h2 id="menuTitle" class="text-sm font-semibold tracking-tight">
+              Menu
+            </h2>
+            <span id="countLabel" class="text-xs text-white/50"></span>
+          </div>
+
+          <div id="menuList" class="mt-3 grid gap-2"></div>
+
+          <!-- Empty state -->
+          <div
+            id="emptyState"
+            class="hidden mt-10 rounded-3xl border border-white/10 bg-white/5 p-5"
+          >
+            <p class="text-sm font-medium">Nothing matches your search.</p>
+            <p class="mt-1 text-sm text-white/60">
+              Try a different word or clear the search.
+            </p>
+            <button
+              id="emptyClearBtn"
+              type="button"
+              class="mt-4 inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold"
+              style="background: linear-gradient(90deg, var(--accent), var(--accent2));"
+            >
+              Clear search
+            </button>
+          </div>
+        </section>
+
+        <!-- Footer CTA (optional) -->
+        <section class="mt-10">
+          <div
+            class="rounded-3xl border border-white/10 bg-white/5 p-5"
+          >
+            <p class="text-sm font-semibold">Want to order?</p>
+            <p class="mt-1 text-sm text-white/60">
+              Show the cashier your items (or ask for today’s special).
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <!-- Bottom sheet modal -->
+      <div
+        id="modalOverlay"
+        class="fixed inset-0 z-40 hidden"
+        aria-hidden="true"
+      >
+        <div
+          class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          data-close="true"
+        ></div>
+
+        <div
+          class="absolute inset-x-0 bottom-0 mx-auto max-w-xl px-4 pb-4 safe-bottom"
+        >
+          <div
+            id="modalPanel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modalTitle"
+            class="rounded-3xl border border-white/10 bg-[#121218]/95 shadow-soft overflow-hidden"
+          >
+            <div class="p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h3
+                    id="modalTitle"
+                    class="text-base font-semibold tracking-tight"
+                  >
+                    Item
+                  </h3>
+                  <p
+                    id="modalCategory"
+                    class="mt-0.5 text-xs text-white/60"
+                  ></p>
+                </div>
+
+                <button
+                  id="modalClose"
+                  type="button"
+                  class="rounded-2xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div class="mt-3">
+                <div class="flex items-baseline justify-between gap-3">
+                  <p id="modalPrice" class="text-lg font-semibold"></p>
+                  <span
+                    id="modalBadge"
+                    class="hidden text-[11px] px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/70"
+                  ></span>
+                </div>
+                <p id="modalDesc" class="mt-2 text-sm text-white/70"></p>
+              </div>
+
+              <div id="modalImageWrap" class="hidden mt-4">
+                <img
+                  id="modalImage"
+                  alt=""
+                  class="w-full h-44 rounded-2xl object-cover ring-1 ring-white/10"
+                />
+              </div>
+
+              <div class="mt-4 flex gap-2">
+                <button
+                  id="modalCopyBtn"
+                  type="button"
+                  class="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 active:scale-[0.99]"
+                >
+                  Copy item name
+                </button>
+                <button
+                  id="modalDoneBtn"
+                  type="button"
+                  class="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold active:scale-[0.99]"
+                  style="background: linear-gradient(90deg, var(--accent), var(--accent2));"
+                >
+                  Done
+                </button>
+              </div>
+
+              <p id="toast" class="mt-3 hidden text-xs text-white/60"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading bar -->
+      <div
+        id="loadingBar"
+        class="fixed left-0 top-0 z-50 h-[2px] w-0"
+        style="background: linear-gradient(90deg, var(--accent), var(--accent2));"
+      ></div>
+    </div>
+
+    <script src="./app.js"></script>
+    <script>
+      // Service worker (optional but makes it feel premium/offline)
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>
