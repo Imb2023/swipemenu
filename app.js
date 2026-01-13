@@ -1,43 +1,37 @@
+// Specials-only, swipe deck UI (1–3 items) — premium presentation-first.
 
-const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR3G5xCBk0ZvgX_g8skVStCxUVztcCcwWQWkN_f1JK5iNmMJqNn1Cw/exec";
+// 1) Paste your Apps Script Web App URL here:
+const SHEET_API_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
-// 2) Brand settings per client:
+// 2) Brand (tiny header only)
 const BRAND = {
-  name: "Instant Specials Menu",
-  tagline: "Tap an item for more details",
-  logoPath: "./logo.png",
-  // Optional: override accent color quickly:
-  // accent: "#f97316",
+  name: "Today’s Specials",
+  sub: "Swipe to view",
+  logoPath: "./public/logo.png",
+  // accent: "#f97316", // optional
 };
 
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const $ = (s) => document.querySelector(s);
 
 const els = {
-  brandName: $("#brandName"),
-  brandTagline: $("#brandTagline"),
   brandLogo: $("#brandLogo"),
+  brandName: $("#brandName"),
+  brandSub: $("#brandSub"),
   statusPill: $("#statusPill"),
 
-  categoryRow: $("#categoryRow"),
-
-  specialsSection: $("#specialsSection"),
-  specialsGrid: $("#specialsGrid"),
-  menuTitle: $("#menuTitle"),
-  countLabel: $("#countLabel"),
-  menuList: $("#menuList"),
-  emptyState: $("#emptyState"),
+  deck: $("#deck"),
+  dots: $("#dots"),
+  swipeHint: $("#swipeHint"),
 
   loadingBar: $("#loadingBar"),
 
   modalOverlay: $("#modalOverlay"),
-  modalPanel: $("#modalPanel"),
   modalClose: $("#modalClose"),
   modalTitle: $("#modalTitle"),
-  modalCategory: $("#modalCategory"),
+  modalMeta: $("#modalMeta"),
   modalPrice: $("#modalPrice"),
-  modalDesc: $("#modalDesc"),
   modalBadge: $("#modalBadge"),
+  modalDesc: $("#modalDesc"),
   modalImageWrap: $("#modalImageWrap"),
   modalImage: $("#modalImage"),
   modalCopyBtn: $("#modalCopyBtn"),
@@ -45,8 +39,9 @@ const els = {
   toast: $("#toast"),
 };
 
-let rawItems = [];
-let activeCategory = "All";
+let specials = [];
+let activeIndex = 0;
+let userInteracted = false;
 
 function normalizeBoolean(v) {
   if (typeof v === "boolean") return v;
@@ -57,201 +52,16 @@ function normalizeBoolean(v) {
   return !!v;
 }
 
-function money(v) {
-  if (v === null || v === undefined || v === "") return "";
-  const num = Number(String(v).replace(/[^\d.]/g, ""));
-  if (!Number.isFinite(num)) return String(v);
-  return `$${num.toLocaleString('en-US', { minimumFractionDigits: num % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
-}
-
 function safeText(v) {
   return (v ?? "").toString().trim();
 }
 
-function startLoading() {
-  els.loadingBar.style.width = "10%";
-  els.loadingBar.style.transition = "width 250ms ease";
-  requestAnimationFrame(() => (els.loadingBar.style.width = "65%"));
-}
-
-function endLoading() {
-  els.loadingBar.style.width = "100%";
-  setTimeout(() => {
-    els.loadingBar.style.transition = "none";
-    els.loadingBar.style.width = "0";
-    void els.loadingBar.offsetWidth;
-    els.loadingBar.style.transition = "width 250ms ease";
-  }, 250);
-}
-
-function setBrand() {
-  els.brandName.textContent = BRAND.name;
-  els.brandTagline.textContent = BRAND.tagline;
-  if (BRAND.logoPath) els.brandLogo.src = BRAND.logoPath;
-
-  if (BRAND.accent) {
-    document.documentElement.style.setProperty("--accent", BRAND.accent);
-  }
-}
-
-function showStatus(text) {
-  els.statusPill.textContent = text;
-  els.statusPill.classList.remove("hidden");
-  setTimeout(() => els.statusPill.classList.add("hidden"), 2000);
-}
-
-async function fetchMenu() {
-  if (!SHEET_API_URL || SHEET_API_URL.includes("PASTE_")) {
-    return [
-      { id: "sp1", category: "Specials", name: "2 Tacos + Drink", price: 7.99, description: "Your choice of meat with a fresh drink.", featured: true, available: true, order: 1 },
-      { id: "sp2", category: "Specials", name: "Smoothie Bowl", price: 5.5, description: "Seasonal fruits and organic granola.", featured: true, available: true, order: 2 },
-      { id: "m1", category: "Appetizers", name: "Guacamole & Chips", price: 4.5, description: "Hand-picked avocados.", featured: false, available: true, order: 3 },
-    ];
-  }
-
-  const res = await fetch(SHEET_API_URL, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load menu");
-  const json = await res.json();
-
-  return json.map((r) => ({
-    id: safeText(r.id),
-    category: safeText(r.category) || "Menu",
-    name: safeText(r.name),
-    price: safeText(r.price),
-    description: safeText(r.description),
-    image: safeText(r.image),
-    featured: normalizeBoolean(r.featured),
-    available: normalizeBoolean(r.available),
-    order: Number(r.order) || 9999,
-  }));
-}
-
-function buildCategories(items) {
-  const cats = new Set(["All"]);
-  items.forEach((i) => {
-    if (i.available && i.category) cats.add(i.category);
-  });
-  const arr = Array.from(cats);
-  arr.sort((a, b) => {
-    if (a === "All") return -1;
-    if (b === "All") return 1;
-    if (a.toLowerCase() === "specials") return -1;
-    if (b.toLowerCase() === "specials") return 1;
-    return a.localeCompare(b);
-  });
-  return arr;
-}
-
-function pillButton(label) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "shrink-0 rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition glass text-white/50 hover:text-white hover:bg-white/5";
-  btn.textContent = label;
-  btn.dataset.cat = label;
-  return btn;
-}
-
-function renderCategoryRow(categories) {
-  els.categoryRow.innerHTML = "";
-  categories.forEach((c) => {
-    const b = pillButton(c);
-    if (c === activeCategory) {
-      b.className = "shrink-0 rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition bg-white text-black shadow-lg";
-    }
-    b.addEventListener("click", () => {
-      activeCategory = c;
-      renderAll();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-    els.categoryRow.appendChild(b);
-  });
-}
-
-function matchCategory(item) {
-  if (activeCategory === "All") return true;
-  return item.category === activeCategory;
-}
-
-function visibleItems() {
-  return rawItems
-    .filter((i) => i.available)
-    .filter(matchCategory)
-    .sort((a, b) => a.order - b.order);
-}
-
-function featuredSpecials() {
-  return rawItems
-    .filter((i) => i.available)
-    .filter((i) => i.featured || i.category.toLowerCase() === "specials")
-    .sort((a, b) => a.order - b.order)
-    .slice(0, 6);
-}
-
-function cardSpecial(item, index) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "item-appear text-left glass rounded-[2rem] p-6 hover:bg-white/5 group active:scale-[0.98]";
-  btn.style.animationDelay = `${index * 0.1}s`;
-  btn.innerHTML = `
-    <div class="flex items-start justify-between gap-4">
-      <div class="min-w-0 space-y-2">
-        <h3 class="text-lg font-bold tracking-tight">${escapeHtml(item.name)}</h3>
-        <p class="text-sm text-white/40 font-light line-clamp-2 leading-relaxed">${escapeHtml(item.description || "")}</p>
-      </div>
-      <div class="shrink-0 text-lg font-light">${escapeHtml(money(item.price))}</div>
-    </div>
-    <div class="mt-6 flex items-center gap-2">
-      <span class="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 border border-orange-500/20">Chef's Choice</span>
-    </div>
-  `;
-  btn.addEventListener("click", () => openModal(item, "Special"));
-  return btn;
-}
-
-function rowItem(item, index) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "item-appear text-left glass rounded-2xl p-5 hover:bg-white/5 active:scale-[0.98]";
-  btn.style.animationDelay = `${index * 0.05}s`;
-  btn.innerHTML = `
-    <div class="flex items-center justify-between gap-4">
-      <div class="min-w-0 flex-1">
-        <h4 class="text-base font-semibold tracking-tight">${escapeHtml(item.name)}</h4>
-        ${item.description ? `<p class="mt-1 text-xs text-white/40 line-clamp-1 font-light">${escapeHtml(item.description)}</p>` : ""}
-      </div>
-      <div class="shrink-0 text-base font-light tabular-nums">${escapeHtml(money(item.price))}</div>
-    </div>
-  `;
-  btn.addEventListener("click", () => openModal(item, item.category));
-  return btn;
-}
-
-function renderSpecials() {
-  const specials = featuredSpecials();
-  if (specials.length === 0) {
-    els.specialsSection.classList.add("hidden");
-    return;
-  }
-  els.specialsSection.classList.remove("hidden");
-  els.specialsGrid.innerHTML = "";
-  specials.forEach((it, idx) => els.specialsGrid.appendChild(cardSpecial(it, idx)));
-}
-
-function renderList() {
-  const list = visibleItems();
-  els.menuList.innerHTML = "";
-  list.forEach((it, idx) => els.menuList.appendChild(rowItem(it, idx)));
-  els.countLabel.textContent = `${list.length} items`;
-  els.emptyState.classList.toggle("hidden", list.length > 0);
-}
-
-function renderAll() {
-  const categories = buildCategories(rawItems);
-  if (!categories.includes(activeCategory)) activeCategory = "All";
-  renderCategoryRow(categories);
-  els.menuTitle.textContent = activeCategory;
-  renderSpecials();
-  renderList();
+function money(v) {
+  if (v === null || v === undefined) return "";
+  const num = Number(String(v).replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(num)) return String(v);
+  const decimals = num % 1 === 0 ? 0 : 2;
+  return `$${num.toFixed(decimals)}`;
 }
 
 function escapeHtml(str) {
@@ -264,21 +74,287 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+function startLoading() {
+  els.loadingBar.style.width = "12%";
+  els.loadingBar.style.transition = "width 250ms ease";
+  requestAnimationFrame(() => (els.loadingBar.style.width = "70%"));
+}
+
+function endLoading() {
+  els.loadingBar.style.width = "100%";
+  setTimeout(() => {
+    els.loadingBar.style.transition = "none";
+    els.loadingBar.style.width = "0";
+    void els.loadingBar.offsetWidth;
+    els.loadingBar.style.transition = "width 250ms ease";
+  }, 250);
+}
+
+function showStatus(text) {
+  els.statusPill.textContent = text;
+  els.statusPill.classList.remove("hidden");
+  setTimeout(() => els.statusPill.classList.add("hidden"), 1400);
+}
+
+function setBrand() {
+  els.brandName.textContent = BRAND.name;
+  els.brandSub.textContent = BRAND.sub;
+  els.brandLogo.src = BRAND.logoPath;
+  if (BRAND.accent) {
+    document.documentElement.style.setProperty("--accent", BRAND.accent);
+  }
+}
+
+async function fetchRows() {
+  // Demo fallback
+  if (!SHEET_API_URL || SHEET_API_URL.includes("PASTE_")) {
+    return [
+      {
+        id: "sp1",
+        category: "Specials",
+        name: "2 Tacos + Drink",
+        price: 7.99,
+        description: "Any meat. Limited time.",
+        image: "",
+        featured: true,
+        available: true,
+        order: 1,
+      },
+      {
+        id: "sp2",
+        category: "Specials",
+        name: "Large Smoothie",
+        price: 5.5,
+        description: "All flavors. Ask about add-ons.",
+        image: "",
+        featured: true,
+        available: true,
+        order: 2,
+      },
+    ];
+  }
+
+  const res = await fetch(SHEET_API_URL, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load");
+  const json = await res.json();
+
+  return json.map((r) => ({
+    id: safeText(r.id),
+    category: safeText(r.category) || "Specials",
+    name: safeText(r.name),
+    price: safeText(r.price),
+    description: safeText(r.description),
+    image: safeText(r.image),
+    featured: normalizeBoolean(r.featured),
+    available: normalizeBoolean(r.available),
+    order: Number(r.order) || 9999,
+  }));
+}
+
+function pickSpecials(rows) {
+  // Specials-only logic:
+  // - show available items
+  // - prefer featured OR category == "Specials"
+  // - hard cap at 3 to match expectation
+  const filtered = rows
+    .filter((r) => r.available)
+    .filter(
+      (r) => r.featured || (r.category || "").toLowerCase() === "specials"
+    )
+    .sort((a, b) => a.order - b.order);
+
+  return filtered.slice(0, 3);
+}
+
+function renderDots(count) {
+  els.dots.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className =
+      "h-2.5 w-2.5 rounded-full border border-white/20 transition";
+    dot.style.background = i === activeIndex ? "white" : "transparent";
+    dot.style.opacity = i === activeIndex ? "0.9" : "0.45";
+    dot.addEventListener("click", () => {
+      userInteracted = true;
+      hideSwipeHint();
+      scrollToIndex(i);
+    });
+    els.dots.appendChild(dot);
+  }
+}
+
+function hideSwipeHint() {
+  if (!els.swipeHint) return;
+  els.swipeHint.style.display = "none";
+}
+
+function scrollToIndex(i) {
+  const card = els.deck.querySelector(`[data-index="${i}"]`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cardHtml(item, index) {
+  // Full-screen “slide” card.
+  // Optional image: if provided, becomes background hero.
+  const hasImg = !!item.image;
+  const price = money(item.price);
+
+  const bg = hasImg
+    ? `background-image: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,.18)), url('${item.image}');`
+    : `background-image: radial-gradient(900px 500px at 50% 10%, rgba(255,255,255,.08), transparent 55%),
+       linear-gradient(135deg, rgba(249,115,22,.20), rgba(255,255,255,.06));`;
+
+  return `
+  <section
+    class="snap-start h-[calc(100dvh-56px)] px-4 pt-6 pb-24 safe-bottom flex"
+    data-index="${index}"
+  >
+    <div
+      class="w-full rounded-[28px] border border-white/10 overflow-hidden shadow-2xl"
+      style="${bg} background-size: cover; background-position: center;"
+    >
+      <div class="h-full w-full p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-[11px] px-2 py-1 rounded-full bg-black/35 border border-white/10 text-white/80">
+            TODAY • SPECIAL ${index + 1}/${specials.length}
+          </span>
+
+          <button
+            type="button"
+            class="rounded-2xl bg-black/35 border border-white/10 px-3 py-2 text-xs text-white/80 hover:bg-black/45 active:scale-[0.99]"
+            data-open="${escapeHtml(item.id)}"
+          >
+            Details
+          </button>
+        </div>
+
+        <div class="mt-6">
+          <h2 class="text-3xl leading-tight font-semibold tracking-tight">
+            ${escapeHtml(item.name)}
+          </h2>
+
+          <div class="mt-3 flex items-baseline justify-between gap-3">
+            <p class="text-xl font-semibold">${escapeHtml(price)}</p>
+            <span class="text-xs text-white/75">
+              Ask cashier to order
+            </span>
+          </div>
+
+          ${
+            item.description
+              ? `<p class="mt-3 text-sm text-white/80 leading-relaxed max-w-[38ch]">
+                  ${escapeHtml(item.description)}
+                </p>`
+              : `<p class="mt-3 text-sm text-white/70 max-w-[38ch]">
+                  Limited time today.
+                </p>`
+          }
+        </div>
+
+        <div class="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            class="w-full rounded-2xl px-4 py-3 text-sm font-semibold active:scale-[0.99]"
+            style="background: linear-gradient(90deg, var(--accent), var(--accent2)); color: rgba(0,0,0,.92);"
+            data-copy="${escapeHtml(item.id)}"
+          >
+            Copy item name
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  `;
+}
+
+function renderDeck() {
+  els.deck.innerHTML = specials.map(cardHtml).join("");
+
+  // bind buttons
+  els.deck.querySelectorAll("[data-open]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      userInteracted = true;
+      hideSwipeHint();
+      const id = btn.getAttribute("data-open");
+      const item = specials.find((s) => s.id === id);
+      if (item) openModal(item);
+    });
+  });
+
+  els.deck.querySelectorAll("[data-copy]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      userInteracted = true;
+      hideSwipeHint();
+      const id = btn.getAttribute("data-copy");
+      const item = specials.find((s) => s.id === id);
+      if (!item) return;
+      try {
+        await navigator.clipboard.writeText(item.name || "");
+        toast("Copied.");
+      } catch {
+        toast("Copy blocked by browser.");
+      }
+    });
+  });
+
+  // dots
+  renderDots(specials.length);
+
+  // observe active slide
+  const cards = els.deck.querySelectorAll("[data-index]");
+  const obs = new IntersectionObserver(
+    (entries) => {
+      // Pick the most visible entry
+      const visible = entries
+        .filter((e) => e.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+
+      const i = Number(visible.target.getAttribute("data-index"));
+      if (Number.isFinite(i) && i !== activeIndex) {
+        activeIndex = i;
+        renderDots(specials.length);
+      }
+    },
+    { root: els.deck, threshold: [0.55, 0.7, 0.85] }
+  );
+
+  cards.forEach((c) => obs.observe(c));
+
+  // hide swipe hint after first scroll
+  els.deck.addEventListener(
+    "scroll",
+    () => {
+      if (!userInteracted) {
+        userInteracted = true;
+        hideSwipeHint();
+      }
+    },
+    { passive: true }
+  );
+
+  // if only 1 item, hide hint + dots
+  if (specials.length <= 1) {
+    hideSwipeHint();
+    els.dots.parentElement?.classList?.add("hidden");
+  } else {
+    els.dots.parentElement?.classList?.remove("hidden");
+  }
+}
+
+// Modal
 let lastFocused = null;
-function openModal(item, badgeText) {
+
+function openModal(item) {
   lastFocused = document.activeElement;
 
-  els.modalTitle.textContent = item.name || "Item";
-  els.modalCategory.textContent = item.category || "";
+  els.modalTitle.textContent = item.name || "Special";
+  els.modalMeta.textContent = "Today’s Special";
   els.modalPrice.textContent = money(item.price) || "";
-  els.modalDesc.textContent = item.description || "Inquire for details.";
-
-  if (badgeText) {
-    els.modalBadge.textContent = badgeText;
-    els.modalBadge.classList.remove("hidden");
-  } else {
-    els.modalBadge.classList.add("hidden");
-  }
+  els.modalBadge.textContent = "Limited";
+  els.modalDesc.textContent = item.description || "Ask staff for details.";
 
   if (item.image) {
     els.modalImageWrap.classList.remove("hidden");
@@ -291,18 +367,18 @@ function openModal(item, badgeText) {
   els.modalOverlay.classList.remove("hidden");
   els.modalOverlay.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
-  els.modalClose.focus();
 
   els.modalCopyBtn.onclick = async () => {
     try {
       await navigator.clipboard.writeText(item.name || "");
-      toast("Copied to clipboard");
+      toast("Copied.");
     } catch {
-      toast("Click to copy failed");
+      toast("Copy blocked by browser.");
     }
   };
+  els.modalDoneBtn.onclick = closeModal;
 
-  els.modalDoneBtn.onclick = () => closeModal();
+  els.modalClose.focus();
 }
 
 function closeModal() {
@@ -315,9 +391,10 @@ function closeModal() {
 function toast(msg) {
   els.toast.textContent = msg;
   els.toast.classList.remove("hidden");
-  setTimeout(() => els.toast.classList.add("hidden"), 2000);
+  setTimeout(() => els.toast.classList.add("hidden"), 1200);
 }
 
+// Events
 els.modalClose.addEventListener("click", closeModal);
 els.modalOverlay.addEventListener("click", (e) => {
   if (e.target?.dataset?.close === "true") closeModal();
@@ -326,28 +403,40 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !els.modalOverlay.classList.contains("hidden")) closeModal();
 });
 
-async function loadAndRender(isManual = false) {
+async function load() {
   startLoading();
   try {
-    const items = await fetchMenu();
-    rawItems = items.filter((i) => i.name);
+    const rows = await fetchRows();
+    specials = pickSpecials(rows);
+
     endLoading();
-    renderAll();
-    if (isManual) showStatus("Menu Updated");
-  } catch (err) {
-    endLoading();
-    showStatus("Offline Mode");
-    if (!rawItems.length) {
-      rawItems = [];
-      renderAll();
-      toast("Connection lost");
+
+    if (!specials.length) {
+      // graceful empty state (still premium)
+      els.deck.innerHTML = `
+        <section class="h-[calc(100dvh-56px)] px-4 pt-6 pb-24 safe-bottom flex items-center">
+          <div class="w-full rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <p class="text-sm font-semibold">No specials posted yet.</p>
+            <p class="mt-2 text-sm text-white/60">Please check back soon.</p>
+          </div>
+        </section>
+      `;
+      hideSwipeHint();
+      els.dots.parentElement?.classList?.add("hidden");
+      return;
     }
+
+    renderDeck();
+    showStatus("Updated");
+  } catch {
+    endLoading();
+    showStatus("Offline");
   }
 }
 
 function init() {
   setBrand();
-  loadAndRender(false);
+  load();
 }
 
 init();
