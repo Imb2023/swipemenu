@@ -1,7 +1,7 @@
 // Specials-only, swipe deck UI (1–3 items) — premium presentation-first.
 
 // 1) Paste your Apps Script Web App URL here:
-const SHEET_API_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR3G5xCBk0ZvgX_g8skVStCxUVztcCcwWQWkN_f1JK5iNmMJqNn1Cw/exec";
 
 // 2) Brand (tiny header only)
 const BRAND = {
