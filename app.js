@@ -5,7 +5,7 @@ const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR
 
 // 2) Brand (tiny header only)
 const BRAND = {
-  name: "Today’s Specials",
+  name: "Instant Specials Menu",
   sub: "Swipe to view",
   logoPath: "./public/logo.png",
   // accent: "#f97316", // optional
