@@ -249,7 +249,7 @@ function cardHtml(item, index) {
           <div class="mt-3 flex items-baseline justify-between gap-3">
             <p class="text-xl font-semibold">${escapeHtml(price)}</p>
             <span class="text-xs text-white/75">
-              Ask cashier to order
+              Text Us on FaceBook
             </span>
           </div>
 
@@ -259,7 +259,7 @@ function cardHtml(item, index) {
                   ${escapeHtml(item.description)}
                 </p>`
               : `<p class="mt-3 text-sm text-white/70 max-w-[38ch]">
-                  Limited time today.
+                  Limited time.
                 </p>`
           }
         </div>
@@ -365,7 +365,7 @@ function openModal(item) {
   els.modalMeta.textContent = "Today’s Special";
   els.modalPrice.textContent = money(item.price) || "";
   els.modalBadge.textContent = "Limited";
-  els.modalDesc.textContent = item.description || "Send us a message on FaceBook.";
+  els.modalDesc.textContent = item.description || "Send Us a message on FaceBook.";
 
   if (item.image) {
     els.modalImageWrap.classList.remove("hidden");
