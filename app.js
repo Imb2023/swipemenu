@@ -8,7 +8,7 @@ const BRAND = {
   name: "Instant Specials Menu",
   sub: "Swipe to view",
   logoPath: "/logo.png",
-  // accent: "#f97316", // optional
+  accent: "#E2DB02", // optional
 };
 
 const $ = (s) => document.querySelector(s);
@@ -113,7 +113,7 @@ async function fetchRows() {
         id: "SP1",
         category: "Special",
         name: "Menu + Discount",
-        price: 50.00,
+        price: 100.00,
         description: "First 100 customers Limited time.",
         image: "/menuitem1.jpg",
         featured: true,
@@ -124,7 +124,7 @@ async function fetchRows() {
         id: "SP2",
         category: "Special",
         name: "Instant Specials Menu",
-        price: 100.00,
+        price: 150.00,
         description: "You own it and can change it instantly.",
         image: "/menuitem2.jpg",
         featured: true,
@@ -135,7 +135,7 @@ async function fetchRows() {
         id: "SP3",
         category: "Special",
         name: "Instant Specials Menu",
-        price: 100.00,
+        price: 150.00,
         description: "You own it and can change it instantly.",
         image: "/menuitem4.jpg",
         featured: true,
@@ -365,7 +365,7 @@ function openModal(item) {
   els.modalMeta.textContent = "Today’s Special";
   els.modalPrice.textContent = money(item.price) || "";
   els.modalBadge.textContent = "Limited";
-  els.modalDesc.textContent = item.description || "Ask staff for details.";
+  els.modalDesc.textContent = item.description || "Send us a message on FaceBook.";
 
   if (item.image) {
     els.modalImageWrap.classList.remove("hidden");
