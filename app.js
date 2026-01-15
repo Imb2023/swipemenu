@@ -6,7 +6,7 @@ const SHEET_API_URL = "scrip url here";
 const BRAND = {
   name: "Instant Specials Menu",
   sub: "Swipe to view",
-  logoPath: "/logo.png",
+  logoPath: "logo.png",
   accent: "#E2DB02", // optional
 };
 
@@ -125,18 +125,18 @@ async function fetchRows() {
         name: "Instant Specials Menu",
         price: 150.00,
         description: "You own it and can change it instantly.",
-        image: "/1.png",
+        image: "1.png",
         featured: true,
         available: true,
         order: 2,
       },
-       {
+      {
         id: "SP3",
         category: "Special",
         name: "Instant Specials Menu",
         price: 150.00,
         description: "You own it and can change it instantly.",
-        image: "/3.png",
+        image: "3.png",
         featured: true,
         available: true,
         order: 2,
@@ -252,15 +252,14 @@ function cardHtml(item, index) {
             </span>
           </div>
 
-          ${
-            item.description
-              ? `<p class="mt-3 text-sm text-white/80 leading-relaxed max-w-[38ch]">
+          ${item.description
+      ? `<p class="mt-3 text-sm text-white/80 leading-relaxed max-w-[38ch]">
                   ${escapeHtml(item.description)}
                 </p>`
-              : `<p class="mt-3 text-sm text-white/70 max-w-[38ch]">
+      : `<p class="mt-3 text-sm text-white/70 max-w-[38ch]">
                   Limited time.
                 </p>`
-          }
+    }
         </div>
 
         <div class="flex items-center justify-between gap-3">

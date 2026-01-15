@@ -5,8 +5,8 @@ const ASSETS = [
   "./app.js",
   "./manifest.json",
   "./logo.png",
-  "./icon-192.png",
-  "./icon-512.png",
+  "./icon-196.png",
+  "./android-chrome-512x512.png",
   "./favicon.ico",
 ];
 
