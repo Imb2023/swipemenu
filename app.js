@@ -1,7 +1,7 @@
 
 // 1) Paste your Apps Script Web App URL here:
 // const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR3G5xCBk0ZvgX_g8skVStCxUVztcCcwWQWkN_f1JK5iNmMJqNn1Cw/exec";
-const SHEET_API_URL = "scrip url here";
+const SHEET_API_URL = "";
 // 2) Brand (tiny header only)
 const BRAND = {
   name: "Instant Specials Menu",
