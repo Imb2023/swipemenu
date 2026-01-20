@@ -7,7 +7,9 @@ const BRAND = {
   name: "Instant Specials Menu",
   sub: "Swipe to view",
   logoPath: "logo.png",
-  accent: "#E2DB02", // optional
+  accent: "#f97316", // Enhanced orange
+  accent2: "#fb923c",
+  orderUrl: "https://m.me/YourPageHere", // Facebook Messenger link
 };
 
 const $ = (s) => document.querySelector(s);
@@ -33,8 +35,10 @@ const els = {
   modalDesc: $("#modalDesc"),
   modalImageWrap: $("#modalImageWrap"),
   modalImage: $("#modalImage"),
-  modalCopyBtn: $("#modalCopyBtn"),
+  modalShareBtn: $("#modalShareBtn"),
+  modalOrderBtn: $("#modalOrderBtn"),
   modalDoneBtn: $("#modalDoneBtn"),
+  refreshBtn: $("#refreshBtn"),
   toast: $("#toast"),
 };
 
@@ -113,7 +117,7 @@ async function fetchRows() {
         category: "Special",
         name: "Menu + Discount",
         price: 100.00,
-        description: "First 100 customers Limited time.",
+        description: "First 100 customers (limit to first 100 ONLY).",
         image: "2.png",
         featured: true,
         available: true,
@@ -124,7 +128,7 @@ async function fetchRows() {
         category: "Special",
         name: "Instant Specials Menu",
         price: 150.00,
-        description: "You own it and can change it instantly.",
+        description: "You own it 100% and can change it instantly.",
         image: "1.png",
         featured: true,
         available: true,
@@ -133,9 +137,9 @@ async function fetchRows() {
       {
         id: "SP3",
         category: "Special",
-        name: "Instant Specials Menu",
-        price: 150.00,
-        description: "You own it and can change it instantly.",
+        name: "mini-signage",
+        price: 250.00,
+        description: "stand alone digital signage.",
         image: "3.png",
         featured: true,
         available: true,
@@ -262,14 +266,13 @@ function cardHtml(item, index) {
     }
         </div>
 
-        <div class="flex items-center justify-between gap-3">
           <button
             type="button"
-            class="w-full rounded-2xl px-4 py-3 text-sm font-semibold active:scale-[0.99]"
-            style="background: linear-gradient(90deg, var(--accent), var(--accent2)); color: rgba(0,0,0,.92);"
-            data-copy="${escapeHtml(item.id)}"
+            class="rounded-2xl bg-black/35 border border-white/10 px-3 py-2 text-xs text-white/80 hover:bg-black/45 active:scale-[0.99] flex items-center gap-1.5"
+            data-share="${escapeHtml(item.id)}"
           >
-            Copy item name
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            Share
           </button>
         </div>
       </div>
@@ -292,19 +295,13 @@ function renderDeck() {
     });
   });
 
-  els.deck.querySelectorAll("[data-copy]").forEach((btn) => {
+  els.deck.querySelectorAll("[data-share]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       userInteracted = true;
       hideSwipeHint();
-      const id = btn.getAttribute("data-copy");
+      const id = btn.getAttribute("data-share");
       const item = specials.find((s) => s.id === id);
-      if (!item) return;
-      try {
-        await navigator.clipboard.writeText(item.name || "");
-        toast("Copied.");
-      } catch {
-        toast("Copy blocked by browser.");
-      }
+      if (item) shareItem(item);
     });
   });
 
@@ -363,7 +360,7 @@ function openModal(item) {
   els.modalMeta.textContent = "Today’s Special";
   els.modalPrice.textContent = money(item.price) || "";
   els.modalBadge.textContent = "Limited";
-  els.modalDesc.textContent = item.description || "Send Us a message on FaceBook.";
+  els.modalDesc.textContent = item.description || "Send Us a message on FB or IG.";
 
   if (item.image) {
     els.modalImageWrap.classList.remove("hidden");
@@ -377,17 +374,19 @@ function openModal(item) {
   els.modalOverlay.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
 
-  els.modalCopyBtn.onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(item.name || "");
-      toast("Copied.");
-    } catch {
-      toast("Copy blocked by browser.");
-    }
+  els.modalShareBtn.onclick = () => shareItem(item);
+  els.modalOrderBtn.onclick = () => {
+    window.open(BRAND.orderUrl, "_blank");
   };
   els.modalDoneBtn.onclick = closeModal;
 
   els.modalClose.focus();
+}
+
+function toast(msg) {
+  els.toast.textContent = msg;
+  els.toast.classList.remove("hidden");
+  setTimeout(() => els.toast.classList.add("hidden"), 1200);
 }
 
 function closeModal() {
@@ -397,13 +396,31 @@ function closeModal() {
   if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
 }
 
-function toast(msg) {
-  els.toast.textContent = msg;
-  els.toast.classList.remove("hidden");
-  setTimeout(() => els.toast.classList.add("hidden"), 1200);
+async function shareItem(item) {
+  const shareData = {
+    title: item.name,
+    text: `Check out today's special: ${item.name} - ${money(item.price)}`,
+    url: window.location.href,
+  };
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+    } else {
+      await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+      toast("Link copied to clipboard!");
+    }
+  } catch (err) {
+    console.error("Share failed", err);
+  }
 }
 
 // Events
+els.refreshBtn.addEventListener("click", () => {
+  els.refreshBtn.classList.add("animate-spin");
+  load().finally(() => {
+    setTimeout(() => els.refreshBtn.classList.remove("animate-spin"), 600);
+  });
+});
 els.modalClose.addEventListener("click", closeModal);
 els.modalOverlay.addEventListener("click", (e) => {
   if (e.target?.dataset?.close === "true") closeModal();

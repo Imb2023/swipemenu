@@ -8,6 +8,9 @@ const ASSETS = [
   "./icon-196.png",
   "./android-chrome-512x512.png",
   "./favicon.ico",
+  "./1.png",
+  "./2.png",
+  "./3.png",
 ];
 
 self.addEventListener("install", (event) => {
