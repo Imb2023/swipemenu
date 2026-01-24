@@ -9,7 +9,7 @@ const BRAND = {
   logoPath: "logo.png",
   accent: "#f97316", // Enhanced orange
   accent2: "#fb923c",
-  orderUrl: "https://business.facebook.com/latest/inbox/messenger?asset_id=759126940611125&business_id=622260317196683", // Facebook Messenger link
+  orderUrl: "https://m.me/profile.php?id=61579375792430", // Facebook Messenger link
 };
 
 const $ = (s) => document.querySelector(s);
