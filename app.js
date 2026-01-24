@@ -1,7 +1,7 @@
 
 // 1) Paste your Apps Script Web App URL here:
-// const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR3G5xCBk0ZvgX_g8skVStCxUVztcCcwWQWkN_f1JK5iNmMJqNn1Cw/exec";
-const SHEET_API_URL = "";
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR3G5xCBk0ZvgX_g8skVStCxUVztcCcwWQWkN_f1JK5iNmMJqNn1Cw/exec";
+// const SHEET_API_URL = "";
 // 2) Brand (tiny header only)
 const BRAND = {
   name: "Instant Specials Menu",
@@ -9,7 +9,7 @@ const BRAND = {
   logoPath: "logo.png",
   accent: "#f97316", // Enhanced orange
   accent2: "#fb923c",
-  orderUrl: "https://m.me/YourPageHere", // Facebook Messenger link
+  orderUrl: "https://business.facebook.com/latest/inbox/messenger?asset_id=759126940611125&business_id=622260317196683", // Facebook Messenger link
 };
 
 const $ = (s) => document.querySelector(s);
