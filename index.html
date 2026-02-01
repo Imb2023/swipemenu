@@ -95,10 +95,14 @@
           </div>
 
           <div class="flex items-center gap-3">
-            <button id="refreshBtn" type="button" 
+            <button id="refreshBtn" type="button"
               class="rounded-full p-2 bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 active:scale-95 transition-all"
               title="Refresh Specials">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+              </svg>
             </button>
             <span id="statusPill"
               class="hidden text-[11px] px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-white/70">
@@ -173,7 +177,7 @@
                 style="background: linear-gradient(90deg, var(--accent), var(--accent2)); color: rgba(0,0,0,.92);">
                 Message Us to Order
               </button>
-              
+
               <div class="flex gap-2">
                 <button id="modalShareBtn" type="button"
                   class="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 active:scale-[0.99]">
@@ -201,7 +205,17 @@
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").catch(() => { });
+        navigator.serviceWorker.register("./sw.js").then(reg => {
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New content is available; notify the app
+                window.dispatchEvent(new CustomEvent('sw-update-available'));
+              }
+            };
+          };
+        }).catch(() => { });
       });
     }
   </script>

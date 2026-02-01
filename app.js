@@ -463,6 +463,14 @@ async function load() {
 function init() {
   setBrand();
   load();
+
+  // Listen for Service Worker updates from index.html
+  window.addEventListener('sw-update-available', () => {
+    showStatus("Updating...");
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  });
 }
 
 init();

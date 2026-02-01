@@ -1,4 +1,4 @@
-const CACHE = "instant-menu-v1";
+const CACHE = "instant-menu-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -44,8 +44,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for everything else:
+  // Stale-While-Revalidate for everything else:
   event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req))
+    caches.match(req).then((cached) => {
+      const networked = fetch(req)
+        .then((res) => {
+          const cacheCopy = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(req, cacheCopy));
+          return res;
+        })
+        .catch(() => cached);
+      return cached || networked;
+    })
   );
 });
