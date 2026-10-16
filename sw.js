@@ -12,7 +12,8 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   const req = event.request;
   // The app handles saved Sheet data. Never intercept other origins or writes.
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== self.location.origin || /\/(api(?:\/|$)|upload(?:[.-]|$))/.test(url.pathname)) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     try {

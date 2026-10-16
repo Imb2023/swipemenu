@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Staff uploads · Specials Menu</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="upload.css" />
+</head>
+<body>
+  <main class="upload-page">
+    <a href="./" class="back-link">← View the menu</a>
+    <header><p class="eyebrow">FOR THE TEAM</p><h1>A fresh look<br>for your special<span>.</span></h1><p>Upload a photo or short clip, then paste its link into your Google Sheet.</p></header>
+    <form id="uploadForm">
+      <label class="file-picker" for="mediaFile"><strong>Choose a photo or video</strong><span>Photos up to 5 MB · Clips up to 10 MB and 15 seconds</span><input id="mediaFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" required /></label>
+      <div id="preview" class="upload-preview" hidden><img id="photoPreview" alt="Selected upload preview" hidden /><video id="videoPreview" controls muted playsinline preload="metadata" hidden></video><p id="fileSummary"></p></div>
+      <label for="staffPassword">Staff upload password</label>
+      <input id="staffPassword" type="password" autocomplete="current-password" maxlength="512" required aria-describedby="passwordHelp" />
+      <p id="passwordHelp" class="field-help">Ask the menu owner for this password. This page does not store the password.</p>
+      <button id="uploadButton" class="button primary" type="submit">Upload to the menu library <span aria-hidden="true">↑</span></button>
+      <button id="cancelUpload" class="button secondary" type="button" hidden>Cancel upload</button>
+      <p id="uploadStatus" role="status" aria-live="polite"></p>
+      <progress id="uploadProgress" max="100" value="0" hidden aria-label="Upload progress"></progress>
+    </form>
+    <section id="uploadResult" class="result-panel" hidden aria-labelledby="resultTitle">
+      <p class="eyebrow">READY FOR YOUR SHEET</p><h2 id="resultTitle">Your media is ready.</h2>
+      <label for="mediaUrl" id="urlLabel">Paste this into the image column</label><input id="mediaUrl" readonly />
+      <button id="copyUrl" class="button primary" type="button">Copy link</button><p id="pasteHelp"></p>
+      <div id="posterResult" hidden><label for="posterUrl">Preview photo · paste into image</label><input id="posterUrl" readonly /><button id="copyPoster" class="button secondary" type="button">Copy preview photo link</button></div>
+      <p class="field-help">Paste the link into the correct row, then set available and featured to TRUE. Refresh the menu after editing your Sheet. Content edits need no website redeploy.</p>
+    </section>
+    <footer><p>Use photos you own or have permission to publish. Uploaded media is public; don’t upload private files.</p><a href="upload-setup.html">Owner setup instructions</a></footer>
+  </main>
+  <script src="upload.js"></script>
+</body>
+</html>

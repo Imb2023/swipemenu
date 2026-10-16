@@ -27,7 +27,7 @@ try:
         assert page.locator('.price').first.inner_text()=='', 'Blank prices must not become $0'
         page.locator('[data-open]').click()
         assert page.locator('#modalTitle').inner_text()=='Test special'
-        page.wait_for_function('document.querySelector("#modalImage").naturalWidth > 0')
+        page.wait_for_function('() => document.querySelector("#modalImage").naturalWidth > 0')
         page.keyboard.press('Escape')
         assert not page.evaluate('window.violations'), page.evaluate('window.violations')
         assert not errors,errors

@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#111210" />
-  <meta name="description" content="A little inspiration for today. Explore our latest specials and message us to order." />
+  <meta name="description" content="A little inspiration for today. Explore our latest specials and ask your server for your favorite." />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Instant Specials Menu" />
-  <meta property="og:description" content="Discover today’s specials. Find your favorite and message us to order." />
+  <meta property="og:description" content="Discover today’s specials. Find your favorite and ask your server for your favorite." />
   <meta property="og:image" content="/assets/social-preview.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Instant Specials Menu" />
-  <meta name="twitter:description" content="Discover today’s specials. Find your favorite and message us to order." />
+  <meta name="twitter:description" content="Discover today’s specials. Find your favorite and ask your server for your favorite." />
   <meta name="twitter:image" content="/assets/social-preview.png" />
   <title>Today’s Specials</title>
   <link rel="icon" href="favicon.ico" />
@@ -33,7 +33,7 @@
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 6.7M20 4v7h-7"/></svg>
       </button>
     </header>
-    <main>
+    <main class="menu-view">
       <div class="intro"><div><p class="eyebrow">FRESH PICKS. GOOD FINDS.</p><h1>Today’s specials<span>.</span></h1></div><p id="statusPill" role="status" aria-live="polite">Made for your day</p></div>
       <div id="deck" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Today’s specials" aria-busy="true">
         <section class="state-card"><span class="eyebrow">ONE MOMENT</span><h2>Finding something good.</h2><p>Loading today’s specials…</p></section>
@@ -54,8 +54,8 @@
       <div class="sheet-title"><h2 id="modalTitle">Special</h2><p id="modalPrice" class="price"></p></div>
       <span id="modalBadge" class="badge">Today’s pick</span>
       <p id="modalDesc"></p>
-      <button id="modalOrderBtn" class="button primary" type="button">Message us to order <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19 19 5M5 5h14v14"/></svg></button>
-      <div class="sheet-actions"><button id="modalShareBtn" class="button secondary" type="button">Share special</button><button id="modalDoneBtn" class="button secondary" type="button">Done</button></div>
+      <p class="server-note">Like this special? Ask your server to order.</p>
+      <div class="sheet-actions"><button id="modalDoneBtn" class="button primary" type="button">Back to specials</button></div>
     </section>
   </div>
   <p id="toast" class="toast hidden" role="status" aria-live="polite"></p>

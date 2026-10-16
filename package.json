@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/production.test.mjs"
+    "test": "node --test tests/production.test.mjs tests/upload-signature.test.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -7,16 +7,15 @@ const BRAND = {
   name: "Instant Specials Menu",
   sub: "Something good, just for today.",
   logoPath: "logo.png",
-  accent: "#f4bd72", // Enhanced orange
+  accent: "#f4bd72", // Warm amber
   accent2: "#f8d7a6",
-  orderUrl: "https://m.me/profile.php?id=61579375792430", // Facebook Messenger link
 };
 
 const $ = (s) => document.querySelector(s);
 const els = Object.fromEntries([
   "brandLogo", "brandName", "brandSub", "statusPill", "deck", "dots", "swipeHint",
   "loadingBar", "modalOverlay", "modalClose", "modalTitle", "modalMeta", "modalPrice",
-  "modalBadge", "modalDesc", "modalImageWrap", "modalImage", "modalShareBtn", "modalOrderBtn",
+  "modalBadge", "modalDesc", "modalImageWrap", "modalImage",
   "modalDoneBtn", "refreshBtn", "toast", "menuNav", "prevBtn", "nextBtn", "appShell"
 ].map((id) => [id, $("#" + id)]));
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -112,6 +111,7 @@ async function fetchRows() {
     price: safeText(r.price),
     description: safeText(r.description),
     image: safeText(r.image),
+    video: safeText(r.video),
     featured: normalizeBoolean(r.featured),
     available: normalizeBoolean(r.available),
     order: Number(r.order) || 9999,
@@ -187,10 +187,25 @@ function scrollToIndex(index) {
   // Scroll only the carousel, leaving the page and header in place.
   els.deck.scrollTo({top: card.offsetTop - els.deck.offsetTop, behavior: reducedMotion.matches ? 'instant' : 'smooth'});
 }
+function safeVideoUrl(value) {
+  const url = safeImageUrl(value);
+  if (!url) return '';
+  const parsed = new URL(url);
+  return (parsed.protocol === 'https:' || parsed.origin === location.origin) && /\.(mp4|webm)$/i.test(parsed.pathname) ? url : '';
+}
+function stopVideos(except) {
+  els.deck.querySelectorAll('video').forEach(video => {
+    if (video === except) return;
+    video.onerror = null;
+    video.pause(); video.removeAttribute('src'); video.load(); video.hidden = true;
+    const button = video.parentElement.querySelector('[data-play]');
+    if (button) button.hidden = false;
+  });
+}
 function cardHtml(item, index) {
   return `<section class="slide" data-index="${index}" role="group" aria-roledescription="slide" aria-label="${index + 1} of ${specials.length}">
     <div class="special-card">
-      <div class="card-art"><span class="card-number">${String(index + 1).padStart(2, '0')} / ${String(specials.length).padStart(2, '0')}</span></div>
+      <div class="card-art">${safeVideoUrl(item.video) ? `<button class="button play-button" type="button" data-play aria-label="Play short clip for ${escapeHtml(item.name)}"><span aria-hidden="true">▶</span> Play clip</button>` : ''}<span class="card-number">${String(index + 1).padStart(2, '0')} / ${String(specials.length).padStart(2, '0')}</span></div>
       <div class="card-content">
         <p class="eyebrow">${escapeHtml(item.category || 'TODAY’S PICK')}</p>
         <h2>${escapeHtml(item.name || 'Today’s special')}</h2>
@@ -198,15 +213,15 @@ function cardHtml(item, index) {
         <p class="price">${escapeHtml(money(item.price))}</p>
         <div class="card-footer">
           <button class="button primary" type="button" data-open="${escapeHtml(item.id)}" aria-label="View details for ${escapeHtml(item.name)}">View special <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19 19 5M5 5h14v14"/></svg></button>
-          <button class="button secondary" type="button" data-share="${escapeHtml(item.id)}" aria-label="Share ${escapeHtml(item.name)}">Share</button>
         </div>
-        <p class="card-note">See something you like? Message us to order.</p>
+        <p class="card-note">Like this special? Ask your server.</p>
       </div>
     </div>
   </section>`;
 }
 function renderDeck() {
   observer?.disconnect();
+  stopVideos();
   activeIndex = Math.min(activeIndex, Math.max(0, specials.length - 1));
   els.deck.innerHTML = specials.map(cardHtml).join('');
   els.deck.querySelectorAll('[data-index]').forEach((card, index) => {
@@ -216,7 +231,21 @@ function renderDeck() {
     hero.style.backgroundImage = imageUrl ? `url("${CSS.escape(imageUrl)}"), ${fallback}` : fallback;
     // Index-based bindings also support Sheets with duplicate or blank IDs.
     card.querySelector('[data-open]').onclick = () => openModal(specials[index]);
-    card.querySelector('[data-share]').onclick = () => shareItem(specials[index]);
+    const play = card.querySelector('[data-play]');
+    if (play) {
+      const clip = document.createElement('video');
+      clip.hidden = true; clip.controls = true; clip.muted = true; clip.playsInline = true; clip.preload = 'none';
+      clip.setAttribute('aria-label', `Short clip: ${specials[index].name}`);
+      if (imageUrl) clip.poster = imageUrl;
+      hero.append(clip);
+      play.onclick = async () => {
+        stopVideos(clip);
+        clip.src = safeVideoUrl(specials[index].video);
+        clip.hidden = false; play.hidden = true;
+        clip.onerror = () => {stopVideos(); toast('This clip is unavailable. Ask your server about the special.');};
+        try {await clip.play();} catch {stopVideos(); toast('Couldn’t play this clip. The offer is still available below.');}
+      };
+    }
   });
   renderDots(specials.length);
   const selected = els.deck.querySelector(`[data-index="${activeIndex}"]`);
@@ -224,7 +253,9 @@ function renderDeck() {
   observer = new IntersectionObserver((entries) => {
     const visible = entries.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
     if (visible && visible.intersectionRatio >= .55) {
-      activeIndex = Number(visible.target.dataset.index);
+      const nextIndex = Number(visible.target.dataset.index);
+      if (nextIndex !== activeIndex) stopVideos();
+      activeIndex = nextIndex;
       updateNavigation();
     }
   }, {root: els.deck, threshold: [.55, .75]});
@@ -237,13 +268,14 @@ function showState(title, message, retry = false) {
   $('#retryBtn')?.addEventListener('click', load);
 }
 function openModal(item) {
+  stopVideos();
   const alreadyOpen = !els.modalOverlay.classList.contains('hidden');
   if (!alreadyOpen) lastFocused = document.activeElement;
   els.modalTitle.textContent = item.name || 'Today’s special';
   els.modalMeta.textContent = item.category || 'TODAY’S SPECIAL';
   els.modalPrice.textContent = money(item.price);
   els.modalBadge.textContent = 'Today’s pick';
-  els.modalDesc.textContent = item.description || 'Message us to find out more about this special.';
+  els.modalDesc.textContent = item.description || 'Ask your server to find out more about this special.';
   const imageUrl = safeImageUrl(item.image);
   els.modalImageWrap.classList.toggle('hidden', !imageUrl);
   if (imageUrl) {
@@ -255,8 +287,6 @@ function openModal(item) {
   els.modalOverlay.setAttribute('aria-hidden', 'false');
   els.appShell.inert = true;
   document.body.style.overflow = 'hidden';
-  els.modalShareBtn.onclick = () => shareItem(item);
-  els.modalOrderBtn.onclick = () => window.open(BRAND.orderUrl, '_blank', 'noopener,noreferrer');
   modalAnimation?.cancel();
   if (!alreadyOpen && !reducedMotion.matches) {
     modalAnimation = $('.sheet').animate([{opacity:0, transform:'translateY(20px)'}, {opacity:1, transform:'translateY(0)'}], {duration:220, easing:'cubic-bezier(.2,.8,.2,1)'});
@@ -270,15 +300,6 @@ function closeModal() {
   els.modalOverlay.classList.add('hidden');
   els.modalOverlay.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
-}
-async function shareItem(item) {
-  const shareData = {title:item.name, text:`Today’s special: ${item.name} — ${money(item.price)}`, url:location.href};
-  try {
-    if (navigator.share) await navigator.share(shareData);
-    else { await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`); toast('Special link copied.'); }
-  } catch (error) {
-    if (error.name !== 'AbortError') toast('Couldn’t share this special. Please try again.');
-  }
 }
 async function load() {
   if (loading) return;
@@ -341,5 +362,6 @@ document.addEventListener('keydown', event => {
     else if (!event.shiftKey && document.activeElement === last) {event.preventDefault(); first.focus();}
   }
 });
+document.addEventListener('visibilitychange', () => {if (document.hidden) stopVideos();});
 setBrand();
 load();

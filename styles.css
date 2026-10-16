@@ -11,3 +11,14 @@
 .slide{height:auto;min-height:var(--card-height)}
 .special-card{height:auto;min-height:var(--card-height)}
 @media(max-width:640px){#deck{--card-height:max(33rem,calc(100dvh - 16rem))}.card-art{min-height:clamp(10rem,30dvh,20rem)}}
+
+/* Offers first; optional clips are fetched only after a deliberate tap. */
+.menu-view .intro{margin:.25rem auto .9rem;align-items:center}
+.menu-view .intro .eyebrow{display:none}
+.menu-view .intro h1{font-size:1.3rem;margin:0;letter-spacing:-.03em}
+.menu-view #deck{--card-height:min(54rem,max(30rem,calc(100dvh - 13rem)))}
+.card-art video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;background:#111210}
+.play-button{position:absolute;bottom:1rem;right:1rem;z-index:1;background:#171812e6;border:1px solid #ffffff40;color:var(--text);backdrop-filter:blur(12px)}
+.server-note{color:var(--accent);font-size:.9rem;margin:1rem 0}
+@media(max-width:640px){.menu-view .intro{flex-direction:row;align-items:center;gap:.75rem}.menu-view #statusPill{max-width:45%;text-align:right;font-size:.65rem}.menu-view #deck{--card-height:max(33rem,calc(100dvh - 12rem))}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.play-button{background:#171812;backdrop-filter:none}}

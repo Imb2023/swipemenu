@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(root, 'dist');
 // Only public runtime files enter the deployment; tests and skills stay private.
-const files = ['index.html', 'app.js', 'register-sw.js', 'styles.css', 'sw.js', 'manifest.json',
+const files = ['upload.html', 'upload.css', 'upload.js', 'upload-setup.html', 'index.html', 'app.js', 'register-sw.js', 'styles.css', 'sw.js', 'manifest.json',
   'robots.txt', 'logo.png', 'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png',
   'apple-touch-icon.png', 'icon-196.png', 'android-chrome-512x512.png', '1.png', '2.png', '3.png'];
 await rm(output, { recursive: true, force: true });
