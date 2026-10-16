@@ -61,3 +61,14 @@ test('public deployment URL generates absolute sharing links, canonical URL, and
     execFileSync(process.execPath, ['scripts/build.mjs'], {cwd:root});
   }
 });
+
+test('uploaded media is copied byte-for-byte into the public deployment', async () => {
+  const source = await readFile(path.join(root, 'media/don-pedro.webp'));
+  assert.deepEqual(await read('media/don-pedro.webp'), source);
+  assert.equal(source.subarray(0,4).toString(), 'RIFF');
+  assert.equal(source.subarray(8,12).toString(), 'WEBP');
+  assert.ok(source.length < 60000, 'First special image should remain lightweight');
+  const publicMedia = await readdir(path.join(root,'dist/media'));
+  assert.ok(publicMedia.includes('don-pedro.webp'));
+  assert.ok(publicMedia.every(name => /\.(avif|webp|jpe?g|png|mp4|webm)$/i.test(name)), 'Only supported media enters the public folder');
+});

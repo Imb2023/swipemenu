@@ -96,8 +96,18 @@ install/offline behavior on the target phone. The viewer does not send messages.
 owned by the site operator; local tests cannot establish them.
 
 
-Staff uploads — one-time Cloudinary setup
-----------------------------------------
+Simple uploads — no media service account required
+-------------------------------------------------
+Attach a photo in chat for optimization and adding to media/, or upload a small
+WebP/JPEG/PNG there through GitHub. The build includes supported files from media/
+automatically. After Vercel deploys the commit, paste the public link into your
+Sheet. First photo:
+  https://swipemenu.vercel.app/media/don-pedro.webp
+Relative media/don-pedro.webp also works in the image column. This preserves
+Google Sheets editing and requires no Cloudinary account or API credentials.
+
+Optional staff uploader — Cloudinary setup
+-----------------------------------------
 Create your own account at https://cloudinary.com/users/register_free and review
 its current free-plan commercial terms/quotas. Visit /upload-setup.html for the
 complete owner checklist. Create a SIGNED upload preset with the allowed photo

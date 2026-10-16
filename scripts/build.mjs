@@ -15,6 +15,17 @@ await mkdir(path.join(output, 'assets'), { recursive: true });
 for (const file of await readdir(path.join(root, 'assets'))) {
   if (/\.(png|svg|webp)$/.test(file)) await copyFile(path.join(root, 'assets', file), path.join(output, 'assets', file));
 }
+// Keep staff-owned media in the checkout; deploy only supported public file types.
+const mediaFiles = [];
+await mkdir(path.join(output, 'media'), { recursive: true });
+for (const entry of await readdir(path.join(root, 'media'), { withFileTypes: true })) {
+  if (entry.isFile() && /\.(avif|webp|jpe?g|png|mp4|webm)$/i.test(entry.name)) {
+    const file = `media/${entry.name}`;
+    await copyFile(path.join(root, file), path.join(output, file));
+    mediaFiles.push(file);
+  }
+}
+mediaFiles.sort();
 // Vercel supplies a deployment hostname; SITE_URL can pin a custom domain.
 const siteConfig = JSON.parse(await readFile(path.join(root, 'site.config.json'), 'utf8'));
 const configuredSite = process.env.SITE_URL || siteConfig.url || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
@@ -36,7 +47,7 @@ const manifest = JSON.parse(await readFile(path.join(output, 'manifest.json'), '
 for (const entry of [...manifest.icons, ...manifest.screenshots]) await readFile(path.join(output, entry.src));
 // New runtime contents get a new offline cache name on every build.
 const hash = createHash('sha256');
-for (const file of files) hash.update(await readFile(path.join(output, file)));
+for (const file of [...files, ...mediaFiles]) {hash.update(file); hash.update(await readFile(path.join(output, file)));}
 const worker = await readFile(path.join(output, 'sw.js'), 'utf8');
 await writeFile(path.join(output, 'sw.js'), worker.replace(/const CACHE = "[^"]+";/, `const CACHE = "instant-menu-${hash.digest('hex').slice(0, 12)}";`));
 console.log(`Built static production site in ${output}`);
