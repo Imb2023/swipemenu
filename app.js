@@ -5,46 +5,29 @@ const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR
 // 2) Brand (tiny header only)
 const BRAND = {
   name: "Instant Specials Menu",
-  sub: "Swipe to view",
+  sub: "Something good, just for today.",
   logoPath: "logo.png",
-  accent: "#f97316", // Enhanced orange
-  accent2: "#fb923c",
+  accent: "#f4bd72", // Enhanced orange
+  accent2: "#f8d7a6",
   orderUrl: "https://m.me/profile.php?id=61579375792430", // Facebook Messenger link
 };
 
 const $ = (s) => document.querySelector(s);
-
-const els = {
-  brandLogo: $("#brandLogo"),
-  brandName: $("#brandName"),
-  brandSub: $("#brandSub"),
-  statusPill: $("#statusPill"),
-
-  deck: $("#deck"),
-  dots: $("#dots"),
-  swipeHint: $("#swipeHint"),
-
-  loadingBar: $("#loadingBar"),
-
-  modalOverlay: $("#modalOverlay"),
-  modalClose: $("#modalClose"),
-  modalTitle: $("#modalTitle"),
-  modalMeta: $("#modalMeta"),
-  modalPrice: $("#modalPrice"),
-  modalBadge: $("#modalBadge"),
-  modalDesc: $("#modalDesc"),
-  modalImageWrap: $("#modalImageWrap"),
-  modalImage: $("#modalImage"),
-  modalShareBtn: $("#modalShareBtn"),
-  modalOrderBtn: $("#modalOrderBtn"),
-  modalDoneBtn: $("#modalDoneBtn"),
-  refreshBtn: $("#refreshBtn"),
-  toast: $("#toast"),
-};
-
+const els = Object.fromEntries([
+  "brandLogo", "brandName", "brandSub", "statusPill", "deck", "dots", "swipeHint",
+  "loadingBar", "modalOverlay", "modalClose", "modalTitle", "modalMeta", "modalPrice",
+  "modalBadge", "modalDesc", "modalImageWrap", "modalImage", "modalShareBtn", "modalOrderBtn",
+  "modalDoneBtn", "refreshBtn", "toast", "menuNav", "prevBtn", "nextBtn", "appShell"
+].map((id) => [id, $("#" + id)]));
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 let specials = [];
 let activeIndex = 0;
-let userInteracted = false;
+let observer;
+let loading = false;
+let lastFocused;
+let toastTimer;
+let modalAnimation;
+const MENU_CACHE_KEY = "specials-menu:last-good-v1";
 
 function normalizeBoolean(v) {
   if (typeof v === "boolean") return v;
@@ -75,37 +58,6 @@ function escapeHtml(str) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
-}
-
-function startLoading() {
-  els.loadingBar.style.width = "12%";
-  els.loadingBar.style.transition = "width 250ms ease";
-  requestAnimationFrame(() => (els.loadingBar.style.width = "70%"));
-}
-
-function endLoading() {
-  els.loadingBar.style.width = "100%";
-  setTimeout(() => {
-    els.loadingBar.style.transition = "none";
-    els.loadingBar.style.width = "0";
-    void els.loadingBar.offsetWidth;
-    els.loadingBar.style.transition = "width 250ms ease";
-  }, 250);
-}
-
-function showStatus(text) {
-  els.statusPill.textContent = text;
-  els.statusPill.classList.remove("hidden");
-  setTimeout(() => els.statusPill.classList.add("hidden"), 1400);
-}
-
-function setBrand() {
-  els.brandName.textContent = BRAND.name;
-  els.brandSub.textContent = BRAND.sub;
-  els.brandLogo.src = BRAND.logoPath;
-  if (BRAND.accent) {
-    document.documentElement.style.setProperty("--accent", BRAND.accent);
-  }
 }
 
 async function fetchRows() {
@@ -148,11 +100,12 @@ async function fetchRows() {
     ];
   }
 
-  const res = await fetch(SHEET_API_URL, { cache: "no-store" });
+  const res = await fetch(SHEET_API_URL, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error("Failed to load");
   const json = await res.json();
 
-  return json.map((r) => ({
+  if (!Array.isArray(json)) throw new Error("Invalid menu response");
+  return json.filter((r) => r && typeof r === "object").map((r) => ({
     id: safeText(r.id),
     category: safeText(r.category) || "Specials",
     name: safeText(r.name),
@@ -180,297 +133,214 @@ function pickSpecials(rows) {
   return filtered.slice(0, 3);
 }
 
-function renderDots(count) {
-  els.dots.innerHTML = "";
-  for (let i = 0; i < count; i++) {
-    const dot = document.createElement("button");
-    dot.type = "button";
-    dot.className =
-      "h-2.5 w-2.5 rounded-full border border-white/20 transition";
-    dot.style.background = i === activeIndex ? "white" : "transparent";
-    dot.style.opacity = i === activeIndex ? "0.9" : "0.45";
-    dot.addEventListener("click", () => {
-      userInteracted = true;
-      hideSwipeHint();
-      scrollToIndex(i);
-    });
-    els.dots.appendChild(dot);
+// Sheet cells are data: allow web/local image URLs, never executable schemes.
+function safeImageUrl(value) {
+  const text = safeText(value);
+  if (!text) return "";
+  try {
+    const url = new URL(text, document.baseURI);
+    if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) return "";
+    return url.href;
+  } catch {
+    return "";
   }
 }
 
-function hideSwipeHint() {
-  if (!els.swipeHint) return;
-  els.swipeHint.style.display = "none";
+function setBrand() {
+  els.brandName.textContent = BRAND.name;
+  els.brandSub.textContent = BRAND.sub;
+  els.brandLogo.src = BRAND.logoPath;
+  document.documentElement.style.setProperty('--accent', BRAND.accent);
+  document.documentElement.style.setProperty('--accent2', BRAND.accent2);
 }
 
-function scrollToIndex(i) {
+function showStatus(text) { els.statusPill.textContent = text; }
+function toast(text) {
+  clearTimeout(toastTimer);
+  els.toast.textContent = text;
+  els.toast.classList.remove('hidden');
+  toastTimer = setTimeout(() => els.toast.classList.add('hidden'), 4000);
+}
+function updateNavigation() {
+  els.dots.querySelectorAll('button').forEach((button, i) => {
+    button.setAttribute('aria-current', String(i === activeIndex));
+  });
+  els.prevBtn.disabled = activeIndex === 0;
+  els.nextBtn.disabled = activeIndex >= specials.length - 1;
+}
+function renderDots(count) {
+  els.dots.replaceChildren();
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.setAttribute('aria-label', `Show special ${i + 1}: ${specials[i].name}`);
+    dot.onclick = () => scrollToIndex(i);
+    els.dots.append(dot);
+  }
+  els.menuNav.hidden = count <= 1;
+  updateNavigation();
+}
+function scrollToIndex(index) {
+  const i = Math.max(0, Math.min(index, specials.length - 1));
   const card = els.deck.querySelector(`[data-index="${i}"]`);
   if (!card) return;
-  card.scrollIntoView({ behavior: "smooth", block: "start" });
+  // Scroll only the carousel, leaving the page and header in place.
+  els.deck.scrollTo({top: card.offsetTop - els.deck.offsetTop, behavior: reducedMotion.matches ? 'instant' : 'smooth'});
 }
-
 function cardHtml(item, index) {
-  // Full-screen “slide” card.
-  // Optional image: if provided, becomes background hero.
-  const hasImg = !!item.image;
-  const price = money(item.price);
-
-  const bg = hasImg
-    ? `background-image: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,.18)), url('${item.image}');`
-    : `background-image: radial-gradient(900px 500px at 50% 10%, rgba(255,255,255,.08), transparent 55%),
-       linear-gradient(135deg, rgba(249,115,22,.20), rgba(255,255,255,.06));`;
-
-  return `
-  <section
-    class="snap-start h-[calc(100dvh-56px)] px-4 pt-6 pb-24 safe-bottom flex"
-    data-index="${index}"
-  >
-    <div
-      class="w-full rounded-[28px] border border-white/10 overflow-hidden shadow-2xl"
-      style="${bg} background-size: cover; background-position: center;"
-    >
-      <div class="h-full w-full p-5 flex flex-col justify-between">
-        <div class="flex items-center justify-between gap-3">
-          <span class="text-[11px] px-2 py-1 rounded-full bg-black/35 border border-white/10 text-white/80">
-            TODAY • SPECIAL ${index + 1}/${specials.length}
-          </span>
-
-          <button
-            type="button"
-            class="rounded-2xl bg-black/35 border border-white/10 px-3 py-2 text-xs text-white/80 hover:bg-black/45 active:scale-[0.99]"
-            data-open="${escapeHtml(item.id)}"
-          >
-            Details
-          </button>
+  return `<section class="slide" data-index="${index}" role="group" aria-roledescription="slide" aria-label="${index + 1} of ${specials.length}">
+    <div class="special-card">
+      <div class="card-art"><span class="card-number">${String(index + 1).padStart(2, '0')} / ${String(specials.length).padStart(2, '0')}</span></div>
+      <div class="card-content">
+        <p class="eyebrow">${escapeHtml(item.category || 'TODAY’S PICK')}</p>
+        <h2>${escapeHtml(item.name || 'Today’s special')}</h2>
+        <p class="card-description">${escapeHtml(item.description || 'A little something worth discovering. Ask us for the details.')}</p>
+        <p class="price">${escapeHtml(money(item.price))}</p>
+        <div class="card-footer">
+          <button class="button primary" type="button" data-open="${escapeHtml(item.id)}" aria-label="View details for ${escapeHtml(item.name)}">View special <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19 19 5M5 5h14v14"/></svg></button>
+          <button class="button secondary" type="button" data-share="${escapeHtml(item.id)}" aria-label="Share ${escapeHtml(item.name)}">Share</button>
         </div>
-
-        <div class="mt-6">
-          <h2 class="text-3xl leading-tight font-semibold tracking-tight">
-            ${escapeHtml(item.name)}
-          </h2>
-
-          <div class="mt-3 flex items-baseline justify-between gap-3">
-            <p class="text-xl font-semibold">${escapeHtml(price)}</p>
-            <span class="text-xs text-white/75">
-              Text Us on FaceBook
-            </span>
-          </div>
-
-          ${item.description
-      ? `<p class="mt-3 text-sm text-white/80 leading-relaxed max-w-[38ch]">
-                  ${escapeHtml(item.description)}
-                </p>`
-      : `<p class="mt-3 text-sm text-white/70 max-w-[38ch]">
-                  Limited time.
-                </p>`
-    }
-        </div>
-
-          <button
-            type="button"
-            class="rounded-2xl bg-black/35 border border-white/10 px-3 py-2 text-xs text-white/80 hover:bg-black/45 active:scale-[0.99] flex items-center gap-1.5"
-            data-share="${escapeHtml(item.id)}"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-            Share
-          </button>
-        </div>
+        <p class="card-note">See something you like? Message us to order.</p>
       </div>
     </div>
-  </section>
-  `;
+  </section>`;
 }
-
 function renderDeck() {
-  els.deck.innerHTML = specials.map(cardHtml).join("");
-
-  // bind buttons
-  els.deck.querySelectorAll("[data-open]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      userInteracted = true;
-      hideSwipeHint();
-      const id = btn.getAttribute("data-open");
-      const item = specials.find((s) => s.id === id);
-      if (item) openModal(item);
-    });
+  observer?.disconnect();
+  activeIndex = Math.min(activeIndex, Math.max(0, specials.length - 1));
+  els.deck.innerHTML = specials.map(cardHtml).join('');
+  els.deck.querySelectorAll('[data-index]').forEach((card, index) => {
+    const hero = card.querySelector('.card-art');
+    const imageUrl = safeImageUrl(specials[index].image);
+    hero.style.backgroundImage = imageUrl
+      ? `url("${CSS.escape(imageUrl)}")`
+      : 'radial-gradient(ellipse at 20% 20%, #a1976266, transparent 70%), linear-gradient(135deg, #444d32, #22291c)';
+    // Index-based bindings also support Sheets with duplicate or blank IDs.
+    card.querySelector('[data-open]').onclick = () => openModal(specials[index]);
+    card.querySelector('[data-share]').onclick = () => shareItem(specials[index]);
   });
-
-  els.deck.querySelectorAll("[data-share]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      userInteracted = true;
-      hideSwipeHint();
-      const id = btn.getAttribute("data-share");
-      const item = specials.find((s) => s.id === id);
-      if (item) shareItem(item);
-    });
-  });
-
-  // dots
   renderDots(specials.length);
-
-  // observe active slide
-  const cards = els.deck.querySelectorAll("[data-index]");
-  const obs = new IntersectionObserver(
-    (entries) => {
-      // Pick the most visible entry
-      const visible = entries
-        .filter((e) => e.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (!visible) return;
-
-      const i = Number(visible.target.getAttribute("data-index"));
-      if (Number.isFinite(i) && i !== activeIndex) {
-        activeIndex = i;
-        renderDots(specials.length);
-      }
-    },
-    { root: els.deck, threshold: [0.55, 0.7, 0.85] }
-  );
-
-  cards.forEach((c) => obs.observe(c));
-
-  // hide swipe hint after first scroll
-  els.deck.addEventListener(
-    "scroll",
-    () => {
-      if (!userInteracted) {
-        userInteracted = true;
-        hideSwipeHint();
-      }
-    },
-    { passive: true }
-  );
-
-  // if only 1 item, hide hint + dots
-  if (specials.length <= 1) {
-    hideSwipeHint();
-    els.dots.parentElement?.classList?.add("hidden");
-  } else {
-    els.dots.parentElement?.classList?.remove("hidden");
-  }
-}
-
-// Modal
-let lastFocused = null;
-
-function openModal(item) {
-  lastFocused = document.activeElement;
-
-  els.modalTitle.textContent = item.name || "Special";
-  els.modalMeta.textContent = "Today’s Special";
-  els.modalPrice.textContent = money(item.price) || "";
-  els.modalBadge.textContent = "Limited";
-  els.modalDesc.textContent = item.description || "Send Us a message on FB or IG.";
-
-  if (item.image) {
-    els.modalImageWrap.classList.remove("hidden");
-    els.modalImage.src = item.image;
-    els.modalImage.alt = item.name || "";
-  } else {
-    els.modalImageWrap.classList.add("hidden");
-  }
-
-  els.modalOverlay.classList.remove("hidden");
-  els.modalOverlay.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-
-  els.modalShareBtn.onclick = () => shareItem(item);
-  els.modalOrderBtn.onclick = () => {
-    window.open(BRAND.orderUrl, "_blank");
-  };
-  els.modalDoneBtn.onclick = closeModal;
-
-  els.modalClose.focus();
-}
-
-function toast(msg) {
-  els.toast.textContent = msg;
-  els.toast.classList.remove("hidden");
-  setTimeout(() => els.toast.classList.add("hidden"), 1200);
-}
-
-function closeModal() {
-  els.modalOverlay.classList.add("hidden");
-  els.modalOverlay.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-  if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
-}
-
-async function shareItem(item) {
-  const shareData = {
-    title: item.name,
-    text: `Check out today's special: ${item.name} - ${money(item.price)}`,
-    url: window.location.href,
-  };
-  try {
-    if (navigator.share) {
-      await navigator.share(shareData);
-    } else {
-      await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-      toast("Link copied to clipboard!");
+  const selected = els.deck.querySelector(`[data-index="${activeIndex}"]`);
+  if (selected) els.deck.scrollTop = selected.offsetTop - els.deck.offsetTop;
+  observer = new IntersectionObserver((entries) => {
+    const visible = entries.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (visible && visible.intersectionRatio >= .55) {
+      activeIndex = Number(visible.target.dataset.index);
+      updateNavigation();
     }
-  } catch (err) {
-    console.error("Share failed", err);
+  }, {root: els.deck, threshold: [.55, .75]});
+  els.deck.querySelectorAll('[data-index]').forEach(card => observer.observe(card));
+}
+function showState(title, message, retry = false) {
+  observer?.disconnect();
+  els.menuNav.hidden = true;
+  els.deck.innerHTML = `<section class="state-card"><span class="eyebrow">TODAY’S SPECIALS</span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(message)}</p>${retry ? '<button class="button primary" id="retryBtn" type="button">Try again</button>' : ''}</section>`;
+  $('#retryBtn')?.addEventListener('click', load);
+}
+function openModal(item) {
+  const alreadyOpen = !els.modalOverlay.classList.contains('hidden');
+  if (!alreadyOpen) lastFocused = document.activeElement;
+  els.modalTitle.textContent = item.name || 'Today’s special';
+  els.modalMeta.textContent = item.category || 'TODAY’S SPECIAL';
+  els.modalPrice.textContent = money(item.price);
+  els.modalBadge.textContent = 'Today’s pick';
+  els.modalDesc.textContent = item.description || 'Message us to find out more about this special.';
+  const imageUrl = safeImageUrl(item.image);
+  els.modalImageWrap.classList.toggle('hidden', !imageUrl);
+  if (imageUrl) {
+    els.modalImage.src = imageUrl;
+    els.modalImage.alt = item.name || 'Special';
+  } else { els.modalImage.removeAttribute('src'); }
+  els.modalImage.onerror = () => els.modalImageWrap.classList.add('hidden');
+  els.modalOverlay.classList.remove('hidden');
+  els.modalOverlay.setAttribute('aria-hidden', 'false');
+  els.appShell.inert = true;
+  document.body.style.overflow = 'hidden';
+  els.modalShareBtn.onclick = () => shareItem(item);
+  els.modalOrderBtn.onclick = () => window.open(BRAND.orderUrl, '_blank', 'noopener,noreferrer');
+  modalAnimation?.cancel();
+  if (!alreadyOpen && !reducedMotion.matches) {
+    modalAnimation = $('.sheet').animate([{opacity:0, transform:'translateY(20px)'}, {opacity:1, transform:'translateY(0)'}], {duration:220, easing:'cubic-bezier(.2,.8,.2,1)'});
+  }
+  els.modalClose.focus({preventScroll:true});
+}
+function closeModal() {
+  modalAnimation?.cancel();
+  els.appShell.inert = false;
+  if (lastFocused?.isConnected) lastFocused.focus({preventScroll:true});
+  els.modalOverlay.classList.add('hidden');
+  els.modalOverlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+async function shareItem(item) {
+  const shareData = {title:item.name, text:`Today’s special: ${item.name} — ${money(item.price)}`, url:location.href};
+  try {
+    if (navigator.share) await navigator.share(shareData);
+    else { await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`); toast('Special link copied.'); }
+  } catch (error) {
+    if (error.name !== 'AbortError') toast('Couldn’t share this special. Please try again.');
   }
 }
-
-// Events
-els.refreshBtn.addEventListener("click", () => {
-  els.refreshBtn.classList.add("animate-spin");
-  load().finally(() => {
-    setTimeout(() => els.refreshBtn.classList.remove("animate-spin"), 600);
-  });
-});
-els.modalClose.addEventListener("click", closeModal);
-els.modalOverlay.addEventListener("click", (e) => {
-  if (e.target?.dataset?.close === "true") closeModal();
-});
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !els.modalOverlay.classList.contains("hidden")) closeModal();
-});
-
 async function load() {
-  startLoading();
+  if (loading) return;
+  loading = true;
+  els.refreshBtn.disabled = true;
+  els.refreshBtn.classList.add('is-loading');
+  els.deck.setAttribute('aria-busy', 'true');
+  els.loadingBar.style.width = '60%';
+  showStatus('Checking today’s specials…');
   try {
     const rows = await fetchRows();
     specials = pickSpecials(rows);
-
-    endLoading();
-
-    if (!specials.length) {
-      // graceful empty state (still premium)
-      els.deck.innerHTML = `
-        <section class="h-[calc(100dvh-56px)] px-4 pt-6 pb-24 safe-bottom flex items-center">
-          <div class="w-full rounded-[28px] border border-white/10 bg-white/5 p-6">
-            <p class="text-sm font-semibold">No specials posted yet.</p>
-            <p class="mt-2 text-sm text-white/60">Please check back soon.</p>
-          </div>
-        </section>
-      `;
-      hideSwipeHint();
-      els.dots.parentElement?.classList?.add("hidden");
-      return;
-    }
-
-    renderDeck();
-    showStatus("Updated");
+    try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({rows, savedAt:Date.now()})); } catch {}
+    if (specials.length) renderDeck();
+    else showState('Good things are on the way.', 'There are no specials right now. Check back a little later.');
+    showStatus('Up to date · Fresh from our menu');
   } catch {
-    endLoading();
-    showStatus("Offline");
+    if (!specials.length) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(MENU_CACHE_KEY));
+        if (Array.isArray(saved?.rows) && Date.now() - saved.savedAt < 86400000) {
+          specials = pickSpecials(saved.rows);
+          if (specials.length) renderDeck();
+        }
+      } catch {}
+    }
+    if (specials.length) showStatus('Saved menu · Couldn’t refresh. Availability may have changed.');
+    else {
+      showState('Let’s try that again.', 'We couldn’t reach the menu. Check your connection and try again.', true);
+      showStatus('Menu unavailable');
+    }
+  } finally {
+    loading = false;
+    els.refreshBtn.disabled = false;
+    els.refreshBtn.classList.remove('is-loading');
+    els.deck.setAttribute('aria-busy', 'false');
+    els.loadingBar.style.width = '0';
   }
 }
-
-function init() {
-  setBrand();
-  load();
-
-  // Listen for Service Worker updates from index.html
-  window.addEventListener('sw-update-available', () => {
-    showStatus("Updating...");
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  });
-}
-
-init();
+els.refreshBtn.onclick = load;
+els.modalClose.onclick = closeModal;
+els.modalDoneBtn.onclick = closeModal;
+els.modalOverlay.onclick = event => {if (event.target.dataset.close) closeModal();};
+els.prevBtn.onclick = () => scrollToIndex(activeIndex - 1);
+els.nextBtn.onclick = () => scrollToIndex(activeIndex + 1);
+els.deck.onkeydown = event => {
+  if (event.target !== els.deck || !specials.length) return;
+  if (['ArrowDown','ArrowUp','Home','End'].includes(event.key)) {
+    event.preventDefault();
+    scrollToIndex(event.key === 'Home' ? 0 : event.key === 'End' ? specials.length - 1 : activeIndex + (event.key === 'ArrowDown' ? 1 : -1));
+  }
+};
+document.addEventListener('keydown', event => {
+  if (els.modalOverlay.classList.contains('hidden')) return;
+  if (event.key === 'Escape') {event.preventDefault(); closeModal();}
+  if (event.key === 'Tab') {
+    const buttons = [...els.modalOverlay.querySelectorAll('button')].filter(button => !button.disabled);
+    const first = buttons[0], last = buttons.at(-1);
+    if (event.shiftKey && document.activeElement === first) {event.preventDefault(); last.focus();}
+    else if (!event.shiftKey && document.activeElement === last) {event.preventDefault(); first.focus();}
+  }
+});
+setBrand();
+load();
