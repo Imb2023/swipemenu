@@ -43,7 +43,7 @@ function safeText(v) {
 }
 
 function money(v) {
-  if (v === null || v === undefined) return "";
+  if (v === null || v === undefined || String(v).trim() === "") return "";
   const num = Number(String(v).replace(/[^\d.]/g, ""));
   if (!Number.isFinite(num)) return String(v);
   const decimals = num % 1 === 0 ? 0 : 2;
@@ -105,7 +105,7 @@ async function fetchRows() {
   const json = await res.json();
 
   if (!Array.isArray(json)) throw new Error("Invalid menu response");
-  return json.filter((r) => r && typeof r === "object").map((r) => ({
+  return json.filter((r) => r && typeof r === "object" && safeText(r.name)).map((r) => ({
     id: safeText(r.id),
     category: safeText(r.category) || "Specials",
     name: safeText(r.name),
@@ -212,9 +212,8 @@ function renderDeck() {
   els.deck.querySelectorAll('[data-index]').forEach((card, index) => {
     const hero = card.querySelector('.card-art');
     const imageUrl = safeImageUrl(specials[index].image);
-    hero.style.backgroundImage = imageUrl
-      ? `url("${CSS.escape(imageUrl)}")`
-      : 'radial-gradient(ellipse at 20% 20%, #a1976266, transparent 70%), linear-gradient(135deg, #444d32, #22291c)';
+    const fallback = 'radial-gradient(ellipse at 20% 20%, #a1976288, transparent 70%), linear-gradient(135deg, #444d32, #22291c)';
+    hero.style.backgroundImage = imageUrl ? `url("${CSS.escape(imageUrl)}"), ${fallback}` : fallback;
     // Index-based bindings also support Sheets with duplicate or blank IDs.
     card.querySelector('[data-open]').onclick = () => openModal(specials[index]);
     card.querySelector('[data-share]').onclick = () => shareItem(specials[index]);

@@ -1,12 +1,40 @@
 {
   "name": "Instant Specials Menu",
   "short_name": "Menu",
-  "start_url": "./index.html",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#0b0b0d",
-  "theme_color": "#0b0b0d",
+  "background_color": "#111210",
+  "theme_color": "#111210",
   "icons": [
-    {"src":"icon-196.png","sizes":"192x192","type":"image/png"},
-    {"src":"android-chrome-512x512.png","sizes":"512x512","type":"image/png"}
+    {
+      "src": "icon-196.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "id": "./",
+  "scope": "./",
+  "description": "Explore today\u2019s specials and message us to order.",
+  "lang": "en",
+  "screenshots": [
+    {
+      "src": "assets/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Today\u2019s specials on mobile"
+    },
+    {
+      "src": "assets/screenshot-desktop.png",
+      "sizes": "1280x900",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Today\u2019s specials on desktop"
+    }
   ]
 }
