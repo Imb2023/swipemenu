@@ -16,7 +16,8 @@ for (const file of await readdir(path.join(root, 'assets'))) {
   if (/\.(png|svg|webp)$/.test(file)) await copyFile(path.join(root, 'assets', file), path.join(output, 'assets', file));
 }
 // Vercel supplies a deployment hostname; SITE_URL can pin a custom domain.
-const configuredSite = process.env.SITE_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+const siteConfig = JSON.parse(await readFile(path.join(root, 'site.config.json'), 'utf8'));
+const configuredSite = process.env.SITE_URL || siteConfig.url || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
 if (configuredSite) {
   const site = new URL(configuredSite.includes('://') ? configuredSite : `https://${configuredSite}`);
   if (site.protocol !== 'https:' || site.username || site.password || site.search || site.hash) throw new Error('SITE_URL must be a public HTTPS site URL without credentials, query, or fragment');

@@ -15,9 +15,10 @@ Push/merge to main to trigger a Git-connected deployment. A manual deployment is
   npx vercel --prod
 Run that from the repository root, where vercel.json is located.
 
-For a custom domain, set SITE_URL in Vercel to your public HTTPS address (for
-example https://your-menu-domain.com), then redeploy. Otherwise the build uses
-VERCEL_PROJECT_PRODUCTION_URL or VERCEL_URL when Vercel provides it. These values
+The public site URL is https://swipemenu.vercel.app/ (site.config.json).
+For a custom domain, update site.config.json or set SITE_URL in Vercel to your public HTTPS address (for
+example https://your-menu-domain.com), then redeploy. Otherwise site.config.json is used, followed by
+VERCEL_PROJECT_PRODUCTION_URL or VERCEL_URL when available. These values
 generate canonical/social URLs and sitemap.xml. With no address the local build
 keeps relative sharing-image links and omits canonical/sitemap output.
 
