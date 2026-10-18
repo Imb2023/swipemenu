@@ -6,7 +6,7 @@ import threading
 from playwright.sync_api import sync_playwright
 
 root = Path(__file__).resolve().parents[1]
-handler = functools.partial(SimpleHTTPRequestHandler, directory=str(root))
+handler = functools.partial(SimpleHTTPRequestHandler, directory=str(root/'dist'))
 server = ThreadingHTTPServer(('127.0.0.1', 0), handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f'http://127.0.0.1:{server.server_port}/'
@@ -15,13 +15,13 @@ try:
         browser = p.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
         context = browser.new_context(service_workers='block')
         page = context.new_page()
-        rows = [dict(id='1', name='Sheet special', price='12.50', image='1.png',
+        rows = [dict(id='1', category='Specials', name='Sheet special', price='12.50', image='1.png',
                      description='From Sheets', featured=True, available=True, order=1)]
-        page.route('https://script.google.com/**', lambda route: route.fulfill(json=rows))
+        page.route('**/api/menu', lambda route: route.fulfill(json={'rows':rows,'updatedAt':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}))
         page.goto(base, wait_until='networkidle')
-        page.wait_for_selector('[data-index]')
+        page.wait_for_selector('[data-open="1"]')
         hero = page.locator('.card-art')
-        assert '1.png' in hero.evaluate('(e) => e.style.backgroundImage')
+        assert '1.png' in page.locator('.card-art > img').get_attribute('src')
         page.locator('[data-open]').click()
         assert page.locator('#modalImage').evaluate('(e) => e.complete && e.naturalWidth > 0')
         page.keyboard.press('Escape')

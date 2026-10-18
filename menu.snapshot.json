@@ -1,0 +1,17 @@
+{
+  "rows": [
+    {
+      "id": "SP1",
+      "name": "don pedro",
+      "category": "Specials",
+      "description": "Orange Juice Gin Sprite",
+      "price": "100",
+      "image": "https://swipemenu.vercel.app/media/don-pedro.webp",
+      "video": "",
+      "available": true,
+      "featured": true,
+      "order": 9999
+    }
+  ],
+  "updatedAt": "2026-10-18T00:48:05.433Z"
+}

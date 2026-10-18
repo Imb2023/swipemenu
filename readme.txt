@@ -1,9 +1,9 @@
 Instant Specials Menu — deployment and maintenance
 ==================================================
 
-Google Sheets remains the source of menu content. The customer viewer is static;
-no database or CSS CDN is required. The optional staff uploader uses a Vercel
-serverless function to authorize direct Cloudinary uploads. Node 20+ packages the public
+Google Sheets remains the source of menu content. The customer interface is static and starts with a published snapshot;
+a Vercel serverless endpoint refreshes and caches the Sheet data. No database or
+CSS CDN is required. The optional staff uploader has a separate signing function. Node 20+ packages the public
 files for deployment without installing runtime dependencies.
 
 Deploy to Vercel
@@ -33,15 +33,16 @@ only on Vercel; configure equivalent headers on another host. Source files in
 
 Sheet configuration
 -------------------
-The existing Apps Script Web App URL is set in app.js as SHEET_API_URL. To replace
+The existing Apps Script Web App URL is set in menu.config.json as sheetUrl. To replace
 it, deploy your Apps Script as a Web App with visitor read access and return a
 JSON array with columns:
   id, category, name, price, description, image, featured, available, order
 Optional video column: a direct MP4/WebM clip URL. Your Apps Script JSON must
 include this column for videos to appear. No video column is needed for photos.
 No Google credential belongs in the public app. Verify it works while signed out.
-The app shows up to three available rows that are featured or category Specials,
-sorted by numeric order. Rows without a name are ignored; blank prices stay blank.
+The app shows up to three available rows with category Special or Specials,
+sorted by numeric order. Featured alone no longer publishes a row from another
+category. This prevents unrelated Menu/test rows from appearing among specials. Rows without a name are ignored; blank prices stay blank.
 Use direct HTTPS image-file URLs, not a gallery/webpage URL such as imgur.com/gallery.
 Relative paths such as 1.png work too. Unsafe URL schemes and HTML injection are
 rejected. An unavailable image leaves the decorative fallback background.
@@ -137,3 +138,27 @@ Vercel Hobby is intended for personal, non-commercial use. For restaurant use,
 choose a commercial-permitted hosting plan. Cloudinary free quotas and hosting
 plan eligibility are separate; do not assume this setup is unlimited or free on
 every commercial hosting plan.
+
+
+Photo-first release and cached menu delivery
+-------------------------------------------
+Customers see name, price, ingredients/description, and ask-your-server guidance
+on the first screen. Details is optional. The first photo is an eager high-priority
+image with explicit dimensions; later photos are lazy. Videos remain opt-in.
+The initial menu is in menu.snapshot.json, fetched from the real Sheet at release.
+The build generates menu-data.js from that snapshot. It renders before /api/menu
+returns. The API fetches Apps Script on the server, coalesces concurrent requests,
+and caches successful responses on Vercel's CDN for 60 seconds with background
+revalidation. Failed fetches return the last in-instance/snapshot data, labeled
+saved. A successful empty response withdraws all specials. Old content is not
+claimed to be current; guests are asked to confirm availability with their server.
+Sheet edits need no redeploy, but can take about a minute plus source fetch time
+to appear. The initial deployment snapshot remains until a fresh background response
+arrives; update it for major menu changes using npm run sync-menu, then build/commit.
+If your local Node requires the cloud proxy: NODE_USE_ENV_PROXY=1 npm run sync-menu.
+Keep TLS verification enabled. No Google secret is needed for this public read API.
+A static Python server only previews the snapshot; it cannot run the live API.
+Additional checks: node --test tests/menu.test.mjs; python3 tests/fast_menu.py.
+The latter deliberately holds the API request open to verify the first offer and
+price are usable before it responds. It also verifies an empty update removes the
+offer. This is a functional check, not a measured mobile-network speed score.

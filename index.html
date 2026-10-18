@@ -7,13 +7,13 @@
   <meta name="description" content="A little inspiration for today. Explore our latest specials and ask your server for your favorite." />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Instant Specials Menu" />
-  <meta property="og:description" content="Discover today’s specials. Find your favorite and ask your server for your favorite." />
+  <meta property="og:description" content="Discover today’s specials. Find your favorite and ask your server." />
   <meta property="og:image" content="/assets/social-preview.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Instant Specials Menu" />
-  <meta name="twitter:description" content="Discover today’s specials. Find your favorite and ask your server for your favorite." />
+  <meta name="twitter:description" content="Discover today’s specials. Find your favorite and ask your server." />
   <meta name="twitter:image" content="/assets/social-preview.png" />
   <title>Today’s Specials</title>
   <link rel="icon" href="favicon.ico" />
@@ -25,24 +25,21 @@
   <noscript><p class="state-card">Please enable JavaScript to load today’s specials from our menu.</p></noscript>
   <div id="appShell">
     <header class="toolbar">
-      <div class="brand">
-        <img id="brandLogo" src="logo.png" alt="" width="40" height="40" />
-        <div><p id="brandName">Instant Specials Menu</p><p id="brandSub">Something good, just for today.</p></div>
-      </div>
+      <h1>Today’s specials</h1>
       <button id="refreshBtn" class="icon-button" type="button" aria-label="Refresh specials" title="Refresh specials">
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 6.7M20 4v7h-7"/></svg>
       </button>
     </header>
     <main class="menu-view">
-      <div class="intro"><div><p class="eyebrow">FRESH PICKS. GOOD FINDS.</p><h1>Today’s specials<span>.</span></h1></div><p id="statusPill" role="status" aria-live="polite">Made for your day</p></div>
       <div id="deck" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Today’s specials" aria-busy="true">
         <section class="state-card"><span class="eyebrow">ONE MOMENT</span><h2>Finding something good.</h2><p>Loading today’s specials…</p></section>
       </div>
       <nav id="menuNav" class="menu-nav" aria-label="Browse specials" hidden>
         <button id="prevBtn" class="icon-button" type="button" aria-label="Previous special">↑</button>
-        <div class="navigation-center"><div id="dots" aria-label="Choose a special"></div><p id="swipeHint">Swipe to explore</p></div>
+        <div class="navigation-center"><div id="dots" aria-label="Choose a special"></div><p id="swipeHint">Swipe for more</p></div>
         <button id="nextBtn" class="icon-button" type="button" aria-label="Next special">↓</button>
       </nav>
+      <p id="statusPill" class="menu-status" role="status" aria-live="polite">Checking for updates…</p>
     </main>
   </div>
   <div id="modalOverlay" class="modal-overlay hidden" aria-hidden="true">
@@ -60,6 +57,7 @@
   </div>
   <p id="toast" class="toast hidden" role="status" aria-live="polite"></p>
   <div id="loadingBar" aria-hidden="true"></div>
+  <script src="./menu-data.js"></script>
   <script src="./app.js"></script>
   <script src="./register-sw.js"></script>
 </body>

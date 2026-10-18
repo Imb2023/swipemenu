@@ -66,13 +66,27 @@
       ]
     },
     {
-      "source": "/api/(.*)",
+      "source": "/api/upload-signature",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "no-store"
         }
       ]
+    },
+    {
+      "source": "/menu-data.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
     }
-  ]
+  ],
+  "functions": {
+    "api/menu.mjs": {
+      "maxDuration": 30
+    }
+  }
 }

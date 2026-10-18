@@ -3,20 +3,20 @@ from playwright.sync_api import sync_playwright
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import threading, functools, atexit
-server = ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(SimpleHTTPRequestHandler, directory=str(Path(__file__).resolve().parents[1])))
+server = ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(SimpleHTTPRequestHandler, directory=str(Path(__file__).resolve().parents[1]/'dist')))
 threading.Thread(target=server.serve_forever, daemon=True).start()
 atexit.register(server.server_close)
 atexit.register(server.shutdown)
 base = f'http://127.0.0.1:{server.server_port}/' 
-rows=[dict(id=str(i),name=name,category='TODAY’S PICK',price=price,description=desc,image=image,featured=True,available=True,order=i) for i,name,price,desc,image in [(1,'Something worth sharing',100,'Your next good find. Discover something special, made to brighten your day.','2.png'),(2,'A little inspiration',150,'Fresh ideas, thoughtful details. Find your favorite and make it yours.','1.png'),(3,'Make it a good day',250,'Explore our latest special. Message us and we’ll take care of the rest.','')]]
+rows=[dict(id=str(i),name=name,category='Specials',price=price,description=desc,image=image,featured=True,available=True,order=i) for i,name,price,desc,image in [(1,'Something worth sharing',100,'Your next good find. Discover something special, made to brighten your day.','2.png'),(2,'A little inspiration',150,'Fresh ideas, thoughtful details. Find your favorite and make it yours.','1.png'),(3,'Make it a good day',250,'Explore our latest special. Message us and we’ll take care of the rest.','')]]
 with sync_playwright() as p:
  b=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
  for w,h in [(390,844),(1280,900),(320,640)]:
   c=b.new_context(viewport={'width':w,'height':h},service_workers='block')
   page=c.new_page(); errors=[];page.on('pageerror',lambda e: errors.append(str(e)))
-  page.route('https://script.google.com/**',lambda r:r.fulfill(json=rows))
+  page.route('**/api/menu',lambda r:r.fulfill(json={'rows':rows,'updatedAt':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}))
   page.goto(base,wait_until='networkidle')
-  assert page.locator('.slide').count()==3
+  page.wait_for_function('() => document.querySelectorAll(".slide").length === 3')
   assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
   page.locator('[data-open="1"]').click()
   assert page.locator('.sheet').is_visible()
@@ -39,15 +39,16 @@ with sync_playwright() as p:
   c.close()
  # First-load failure, retry, then saved-menu fallback.
  c=b.new_context(service_workers='block'); page=c.new_page()
- page.route('https://script.google.com/**',lambda r:r.abort())
+ page.route('**/api/menu',lambda r:r.abort())
  page.goto(base,wait_until='networkidle')
- assert page.locator('#retryBtn').is_visible()
- page.unroute('https://script.google.com/**')
- page.route('https://script.google.com/**',lambda r:r.fulfill(json=rows))
- page.locator('#retryBtn').click();page.wait_for_selector('.slide')
- page.unroute('https://script.google.com/**');page.route('https://script.google.com/**',lambda r:r.abort())
+ assert page.locator('.slide').count()==1
+ assert 'Saved menu' in page.locator('#statusPill').inner_text()
+ page.unroute('**/api/menu')
+ page.route('**/api/menu',lambda r:r.fulfill(json={'rows':rows,'updatedAt':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}))
+ page.locator('#refreshBtn').click();page.wait_for_function('() => document.querySelectorAll(".slide").length === 3')
+ page.unroute('**/api/menu');page.route('**/api/menu',lambda r:r.abort())
  page.reload(wait_until='networkidle')
- assert page.locator('.slide').count()==3
+ page.wait_for_function('() => document.querySelectorAll(".slide").length === 3')
  assert 'Saved menu' in page.locator('#statusPill').inner_text()
  print('PASS error, retry and saved-menu fallback')
  b.close()

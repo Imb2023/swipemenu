@@ -75,7 +75,7 @@ try:
    video_requests.append(route.request.url)
    route.fulfill(body=(Path(clips.name)/'short.mp4').read_bytes(),content_type='video/mp4')
   page.route('https://res.cloudinary.com/**',serve_clip)
-  page.route('https://script.google.com/**',lambda r:r.fulfill(json=[dict(id='1',name='Special with clip',image='1.png',video='https://res.cloudinary.com/test-cloud/video/upload/v1/specials/test.mp4',available=True,featured=True),dict(id='2',name='Photo special',image='2.png',video='javascript:alert(1)',available=True,featured=True)]))
+  page.route('**/api/menu',lambda r:r.fulfill(json={'updatedAt':'2026-10-18T01:00:00Z','rows':[dict(category='Specials',id='1',name='Special with clip',image='1.png',video='https://res.cloudinary.com/test-cloud/video/upload/v1/specials/test.mp4',available=True,featured=True),dict(category='Specials',id='2',name='Photo special',image='2.png',video='javascript:alert(1)',available=True,featured=True)]}))
   page.goto(base,wait_until='networkidle')
   assert not video_requests, 'No video request before deliberate play'
   assert page.locator('[data-play]').count()==1

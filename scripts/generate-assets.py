@@ -7,11 +7,11 @@ from pathlib import Path
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1]
-url=re.search(r'const SHEET_API_URL = "([^"]+)"', (root/'app.js').read_text())[1]
+url=json.loads((root/'menu.config.json').read_text())['sheetUrl']
 with urllib.request.urlopen(url,timeout=30) as response:
     rows=json.load(response)
 assert isinstance(rows,list)
-server=ThreadingHTTPServer(('127.0.0.1',0),functools.partial(SimpleHTTPRequestHandler,directory=str(root)))
+server=ThreadingHTTPServer(('127.0.0.1',0),functools.partial(SimpleHTTPRequestHandler,directory=str(root/'dist')))
 threading.Thread(target=server.serve_forever,daemon=True).start()
 base=f'http://127.0.0.1:{server.server_port}/'
 (root/'assets').mkdir(exist_ok=True)
@@ -20,7 +20,7 @@ try:
         browser=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
         for width,height,name in [(390,844,'screenshot-mobile.png'),(1280,900,'screenshot-desktop.png')]:
             context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,service_workers='block',reduced_motion='reduce')
-            context.route('https://script.google.com/**',lambda route:route.fulfill(json=rows))
+            context.route('**/api/menu',lambda route:route.fulfill(json={'rows':rows,'updatedAt':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}))
             page=context.new_page();page.goto(base,wait_until='networkidle');page.wait_for_selector('.slide')
             page.screenshot(path=str(root/'assets'/name));context.close()
         page=browser.new_page(viewport={'width':1200,'height':630},device_scale_factor=1)

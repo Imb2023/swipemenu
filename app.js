@@ -1,19 +1,6 @@
-
-// 1) Paste your Apps Script Web App URL here:
-const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzPET2eH4tG62PKbR3G5xCBk0ZvgX_g8skVStCxUVztcCcwWQWkN_f1JK5iNmMJqNn1Cw/exec";
-// const SHEET_API_URL = "";
-// 2) Brand (tiny header only)
-const BRAND = {
-  name: "Instant Specials Menu",
-  sub: "Something good, just for today.",
-  logoPath: "logo.png",
-  accent: "#f4bd72", // Warm amber
-  accent2: "#f8d7a6",
-};
-
 const $ = (s) => document.querySelector(s);
 const els = Object.fromEntries([
-  "brandLogo", "brandName", "brandSub", "statusPill", "deck", "dots", "swipeHint",
+  "statusPill", "deck", "dots", "swipeHint",
   "loadingBar", "modalOverlay", "modalClose", "modalTitle", "modalMeta", "modalPrice",
   "modalBadge", "modalDesc", "modalImageWrap", "modalImage",
   "modalDoneBtn", "refreshBtn", "toast", "menuNav", "prevBtn", "nextBtn", "appShell"
@@ -59,80 +46,18 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-async function fetchRows() {
-  // Demo fallback
-  if (!SHEET_API_URL || SHEET_API_URL.includes("PASTE_")) {
-    return [
-      {
-        id: "SP1",
-        category: "Special",
-        name: "Menu + Discount",
-        price: 100.00,
-        description: "First 100 customers (limit to first 100 ONLY).",
-        image: "2.png",
-        featured: true,
-        available: true,
-        order: 1,
-      },
-      {
-        id: "SP2",
-        category: "Special",
-        name: "Instant Specials Menu",
-        price: 150.00,
-        description: "You own it 100% and can change it instantly.",
-        image: "1.png",
-        featured: true,
-        available: true,
-        order: 2,
-      },
-      {
-        id: "SP3",
-        category: "Special",
-        name: "mini-signage",
-        price: 250.00,
-        description: "stand alone digital signage.",
-        image: "3.png",
-        featured: true,
-        available: true,
-        order: 2,
-      },
-    ];
-  }
-
-  const res = await fetch(SHEET_API_URL, { cache: "no-store", signal: AbortSignal.timeout(15000) });
-  if (!res.ok) throw new Error("Failed to load");
-  const json = await res.json();
-
-  if (!Array.isArray(json)) throw new Error("Invalid menu response");
-  return json.filter((r) => r && typeof r === "object" && safeText(r.name)).map((r) => ({
-    id: safeText(r.id),
-    category: safeText(r.category) || "Specials",
-    name: safeText(r.name),
-    price: safeText(r.price),
-    description: safeText(r.description),
-    image: safeText(r.image),
-    video: safeText(r.video),
-    featured: normalizeBoolean(r.featured),
-    available: normalizeBoolean(r.available),
-    order: Number(r.order) || 9999,
+function normalizeRows(rows) {
+  if (!Array.isArray(rows)) throw new Error('Invalid menu response');
+  return rows.filter(r => r && typeof r === 'object' && safeText(r.name)).map(r => ({
+    ...r, name:safeText(r.name),category:safeText(r.category),description:safeText(r.description),
+    image:safeText(r.image),video:safeText(r.video),available:normalizeBoolean(r.available),
+    order:safeText(r.order) !== '' && Number.isFinite(Number(r.order)) ? Number(r.order) : 9999
   }));
 }
-
 function pickSpecials(rows) {
-  // Specials-only logic:
-  // - show available items
-  // - prefer featured OR category == "Specials"
-  // - hard cap at 3 to match expectation
-  const filtered = rows
-    .filter((r) => r.available)
-    .filter(
-      (r) => r.featured || (r.category || "").toLowerCase() === "specials"
-    )
-    .sort((a, b) => a.order - b.order);
-
-  return filtered.slice(0, 3);
+  return normalizeRows(rows).filter(r => r.available && /^specials?$/i.test(r.category))
+    .sort((a,b) => a.order-b.order).slice(0,3);
 }
-
 // Sheet cells are data: allow web/local image URLs, never executable schemes.
 function safeImageUrl(value) {
   const text = safeText(value);
@@ -144,14 +69,6 @@ function safeImageUrl(value) {
   } catch {
     return "";
   }
-}
-
-function setBrand() {
-  els.brandName.textContent = BRAND.name;
-  els.brandSub.textContent = BRAND.sub;
-  els.brandLogo.src = BRAND.logoPath;
-  document.documentElement.style.setProperty('--accent', BRAND.accent);
-  document.documentElement.style.setProperty('--accent2', BRAND.accent2);
 }
 
 function showStatus(text) { els.statusPill.textContent = text; }
@@ -177,7 +94,10 @@ function renderDots(count) {
     dot.onclick = () => scrollToIndex(i);
     els.dots.append(dot);
   }
-  els.menuNav.hidden = count <= 1;
+  els.menuNav.hidden = count === 0;
+  els.dots.hidden = count < 2;
+  els.prevBtn.hidden = count < 2; els.nextBtn.hidden = count < 2;
+  els.swipeHint.textContent = count > 1 ? 'Swipe for more' : 'Today’s special';
   updateNavigation();
 }
 function scrollToIndex(index) {
@@ -203,22 +123,19 @@ function stopVideos(except) {
   });
 }
 function cardHtml(item, index) {
-  return `<section class="slide" data-index="${index}" role="group" aria-roledescription="slide" aria-label="${index + 1} of ${specials.length}">
+  return `<section class="slide" data-index="${index}" role="group" aria-roledescription="slide" aria-label="${index+1} of ${specials.length}">
     <div class="special-card">
-      <div class="card-art">${safeVideoUrl(item.video) ? `<button class="button play-button" type="button" data-play aria-label="Play short clip for ${escapeHtml(item.name)}"><span aria-hidden="true">▶</span> Play clip</button>` : ''}<span class="card-number">${String(index + 1).padStart(2, '0')} / ${String(specials.length).padStart(2, '0')}</span></div>
+      <div class="card-art">${safeVideoUrl(item.video) ? `<button class="button play-button" type="button" data-play aria-label="Play short clip for ${escapeHtml(item.name)}">▶ Play clip</button>` : ''}</div>
       <div class="card-content">
-        <p class="eyebrow">${escapeHtml(item.category || 'TODAY’S PICK')}</p>
-        <h2>${escapeHtml(item.name || 'Today’s special')}</h2>
-        <p class="card-description">${escapeHtml(item.description || 'A little something worth discovering. Ask us for the details.')}</p>
-        <p class="price">${escapeHtml(money(item.price))}</p>
-        <div class="card-footer">
-          <button class="button primary" type="button" data-open="${escapeHtml(item.id)}" aria-label="View details for ${escapeHtml(item.name)}">View special <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19 19 5M5 5h14v14"/></svg></button>
-        </div>
-        <p class="card-note">Like this special? Ask your server.</p>
+        <p class="eyebrow">TODAY’S PICK</p>
+        <div class="offer-heading"><h2>${escapeHtml(item.name)}</h2><p class="price">${escapeHtml(money(item.price))}</p></div>
+        <p class="card-description">${escapeHtml(item.description || 'Ask your server about this special.')}</p>
+        <div class="card-footer"><p class="card-note"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17h18M5 17v-3a7 7 0 0 1 14 0v3M2 21h20M12 5V2"/></svg>Ask your server to order</p><button class="details-button" type="button" data-open="${escapeHtml(item.id)}" aria-label="View details for ${escapeHtml(item.name)}">Details</button></div>
       </div>
     </div>
   </section>`;
 }
+function itemAlt(item) {return safeText(item.name) || 'Today’s special';}
 function renderDeck() {
   observer?.disconnect();
   stopVideos();
@@ -228,7 +145,14 @@ function renderDeck() {
     const hero = card.querySelector('.card-art');
     const imageUrl = safeImageUrl(specials[index].image);
     const fallback = 'radial-gradient(ellipse at 20% 20%, #a1976288, transparent 70%), linear-gradient(135deg, #444d32, #22291c)';
-    hero.style.backgroundImage = imageUrl ? `url("${CSS.escape(imageUrl)}"), ${fallback}` : fallback;
+    hero.style.backgroundImage = fallback;
+    if (imageUrl) {
+      const photo = document.createElement('img');
+      photo.alt = itemAlt(specials[index]); photo.width = 800; photo.height = 1000;
+      photo.loading = index === 0 ? 'eager' : 'lazy'; photo.decoding = 'async';
+      photo.fetchPriority = index === 0 ? 'high' : 'low';
+      photo.src = imageUrl; photo.onerror = () => photo.remove(); hero.prepend(photo);
+    }
     // Index-based bindings also support Sheets with duplicate or blank IDs.
     card.querySelector('[data-open]').onclick = () => openModal(specials[index]);
     const play = card.querySelector('[data-play]');
@@ -263,6 +187,7 @@ function renderDeck() {
 }
 function showState(title, message, retry = false) {
   observer?.disconnect();
+  stopVideos();
   els.menuNav.hidden = true;
   els.deck.innerHTML = `<section class="state-card"><span class="eyebrow">TODAY’S SPECIALS</span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(message)}</p>${retry ? '<button class="button primary" id="retryBtn" type="button">Try again</button>' : ''}</section>`;
   $('#retryBtn')?.addEventListener('click', load);
@@ -301,43 +226,51 @@ function closeModal() {
   els.modalOverlay.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
 }
+let updatedAt = '';
+let initialized = false;
+function applyMenu(data, saved = false) {
+  const next = pickSpecials(data.rows);
+  const changed = JSON.stringify(next) !== JSON.stringify(specials);
+  specials = next; updatedAt = data.updatedAt || '';
+  if (!initialized || changed) {
+    if (!els.modalOverlay.classList.contains('hidden')) closeModal();
+    if (specials.length) renderDeck();
+    else showState('Good things are on the way.', 'No specials are posted right now. Ask your server what’s available.');
+  }
+  initialized = true;
+  const age = Date.now()-Date.parse(updatedAt);
+  showStatus(saved || data.stale || !Number.isFinite(age) || age > 300000 ? 'Saved menu · Confirm availability with your server' : 'Menu updated');
+}
 async function load() {
   if (loading) return;
   loading = true;
-  els.refreshBtn.disabled = true;
-  els.refreshBtn.classList.add('is-loading');
-  els.deck.setAttribute('aria-busy', 'true');
-  els.loadingBar.style.width = '60%';
-  showStatus('Checking today’s specials…');
+  els.refreshBtn.disabled = true; els.refreshBtn.classList.add('is-loading');
+  // Existing offers remain usable during the background refresh.
+  if (!initialized) els.deck.setAttribute('aria-busy','true');
   try {
-    const rows = await fetchRows();
-    specials = pickSpecials(rows);
-    try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({rows, savedAt:Date.now()})); } catch {}
-    if (specials.length) renderDeck();
-    else showState('Good things are on the way.', 'There are no specials right now. Check back a little later.');
-    showStatus('Up to date · Fresh from our menu');
+    const response = await fetch('/api/menu', {signal:AbortSignal.timeout(28000)});
+    if (!response.ok) throw new Error('Menu unavailable');
+    const data = await response.json();
+    if (!Array.isArray(data.rows)) throw new Error('Invalid menu');
+    applyMenu(data);
+    try {localStorage.setItem(MENU_CACHE_KEY,JSON.stringify({...data,savedAt:Date.now()}));} catch {}
   } catch {
-    if (!specials.length) {
-      try {
-        const saved = JSON.parse(localStorage.getItem(MENU_CACHE_KEY));
-        if (Array.isArray(saved?.rows) && Date.now() - saved.savedAt < 86400000) {
-          specials = pickSpecials(saved.rows);
-          if (specials.length) renderDeck();
-        }
-      } catch {}
-    }
-    if (specials.length) showStatus('Saved menu · Couldn’t refresh. Availability may have changed.');
-    else {
-      showState('Let’s try that again.', 'We couldn’t reach the menu. Check your connection and try again.', true);
-      showStatus('Menu unavailable');
-    }
+    if (initialized) showStatus('Saved menu · Confirm availability with your server');
+    else {showState('Let’s try that again.', 'We couldn’t reach the menu. Ask your server or try again.',true);showStatus('Menu unavailable');}
   } finally {
-    loading = false;
-    els.refreshBtn.disabled = false;
-    els.refreshBtn.classList.remove('is-loading');
-    els.deck.setAttribute('aria-busy', 'false');
-    els.loadingBar.style.width = '0';
+    loading=false;els.refreshBtn.disabled=false;els.refreshBtn.classList.remove('is-loading');els.deck.setAttribute('aria-busy','false');
   }
+}
+function bootstrap() {
+  let initial = window.INITIAL_MENU;
+  try {
+    const saved = JSON.parse(localStorage.getItem(MENU_CACHE_KEY));
+    const timestamp = Date.parse(saved?.updatedAt);
+    if (Array.isArray(saved?.rows) && Number.isFinite(timestamp) && timestamp <= Date.now() && Date.now()-timestamp < 86400000 && timestamp > Date.parse(initial?.updatedAt || '')) initial=saved;
+  } catch {}
+  if (Array.isArray(initial?.rows)) {try {applyMenu(initial,true);} catch {}}
+  els.deck.setAttribute('aria-busy','false');
+  load();
 }
 els.refreshBtn.onclick = load;
 els.modalClose.onclick = closeModal;
@@ -363,5 +296,4 @@ document.addEventListener('keydown', event => {
   }
 });
 document.addEventListener('visibilitychange', () => {if (document.hidden) stopVideos();});
-setBrand();
-load();
+bootstrap();
