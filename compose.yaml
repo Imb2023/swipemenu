@@ -1,0 +1,14 @@
+services:
+  specials:
+    build: .
+    image: ismasigns-specials:local
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

@@ -1,5 +1,5 @@
 """Exercise the actual browser download, inspect its ZIP, and build the result."""
-import functools,json,threading,tempfile,zipfile,subprocess
+import functools,json,threading,tempfile,zipfile,subprocess,sys,uuid
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
@@ -34,6 +34,14 @@ try:
   assert '</script>' not in seed,seed
   assert '\\u003c/script>' in seed,seed
   assert (app/'dist/brand.svg').exists()
+  for file in ['Dockerfile','.dockerignore','compose.yaml','server.mjs']:assert (app/file).exists()
+  if '--docker' in sys.argv:
+   subprocess.run(['docker','build','-t','ismasigns-specials:package-test','.'],cwd=app,check=True)
+   name='ismasigns-package-test-'+uuid.uuid4().hex[:8]
+   try:
+    subprocess.run(['docker','run','-d','--name',name,'--read-only','--cap-drop','ALL','ismasigns-specials:package-test'],check=True)
+    subprocess.run(['docker','exec',name,'node','-e',"fetch('http://127.0.0.1:3000/').then(async r=>{if(!r.ok||!(await r.text()).includes('Café &lt;Test&gt;'))process.exit(1)})"],check=True)
+   finally:subprocess.run(['docker','rm','-f',name],check=True)
   assert not page.evaluate('document.documentElement.scrollWidth > innerWidth')
   browser.close()
   print('PASS: personalized ZIP download, CRC integrity, safe branding, own snapshot, generated project build')

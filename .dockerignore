@@ -1,0 +1,17 @@
+.git
+.github
+.agents
+.codex
+.vercel
+node_modules
+dist
+.env
+.env.*
+*.pem
+*.key
+__pycache__
+**/__pycache__
+*.zip
+*.tar
+*.log
+tests

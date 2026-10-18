@@ -36,6 +36,47 @@ Unzip and upload the package contents to your own GitHub repository, then import
 
 **Cost note:** Google and media services have quotas. Vercel Hobby is intended for personal, non-commercial use; an operating restaurant needs a commercial-permitted hosting plan. Another host must support both static files and the Node API, or someone must adapt the API. Uploading `dist/` alone does not provide live Sheet updates. Do not assume “public repository” means every hosting plan is free for commercial use.
 
+## Run or share with Docker
+
+Docker support is included in this repository **and every ZIP from IsmaSigns Specials**. It serves both the website and live Sheet API, so it does not depend on Vercel.
+
+From an unzipped restaurant package or this repository:
+
+```bash
+docker compose up --build -d
+```
+
+Open **http://localhost:3000**. Stop it with `docker compose down`. The container runs as a non-root user with a read-only filesystem. Compose binds to localhost; for a public launch, use your own host and an HTTPS reverse proxy. Configure your restaurant through the package builder before sharing its image. The repository image includes the example app and builder, not another customer's customization.
+
+### Shared registry image
+
+The [container workflow](.github/workflows/container.yml) tests and publishes **AMD64 and ARM64** images to GitHub Container Registry after pushes to `main` and `v*` tags. Its target for this repository is:
+
+```text
+ghcr.io/imb2023/ismasigns-specials:latest
+```
+
+Check the [publishing run](https://github.com/Imb2023/swipemenu/actions/workflows/container.yml) before using this address. Publication is complete only when the workflow succeeds. **The package owner must set the package visibility to Public** in GitHub → profile → Packages → ismasigns-specials → Package settings for anonymous sharing; a public repository alone does not guarantee a public container package.
+
+After successful publication and public visibility:
+
+```bash
+docker run -d --name ismasigns-specials --restart unless-stopped --read-only --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:3000:3000 ghcr.io/imb2023/ismasigns-specials:latest
+```
+
+For a stable deployment use a `sha-…` tag or the published image digest. `latest` is updated by future successful builds, but an already-running container stays on its current image until you pull and recreate it. Open `/setup.html` in the shared example app to create a restaurant's own package. `/healthz` checks the web server, not Google's availability.
+
+To publish a restaurant's customized package under **your own** GitHub account, with Docker and GitHub CLI installed:
+
+```bash
+docker build -t ghcr.io/YOUR-LOWERCASE-GITHUB-NAME/ismasigns-specials:latest .
+gh auth login --scopes write:packages
+gh auth token | docker login ghcr.io --username YOUR-GITHUB-NAME --password-stdin
+docker push ghcr.io/YOUR-LOWERCASE-GITHUB-NAME/ismasigns-specials:latest
+```
+
+Keep registry tokens out of the package. Public images include their public Sheet URL and menu snapshot. The Docker build excludes `.env` and common credential files. Updating Sheet cells refreshes live data as usual; changing branding, photos, or the saved snapshot requires rebuilding and redeploying the image.
+
 ## One-time setup
 
 ### 1. Make your restaurant’s copy
