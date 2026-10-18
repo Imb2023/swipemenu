@@ -6,7 +6,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(root, 'dist');
 // Only public runtime files enter the deployment; tests and skills stay private.
 const snapshot = JSON.parse(await readFile(path.join(root, 'menu.snapshot.json'), 'utf8'));
-const files = ['demos.html', 'demos.css', 'demos.js', 'upload.html', 'upload.css', 'upload.js', 'upload-setup.html', 'index.html', 'app.js', 'register-sw.js', 'styles.css', 'sw.js', 'manifest.json',
+const files = ['guide.html', 'guide.css', 'guide-captions.vtt', 'demos.html', 'demos.css', 'demos.js', 'upload.html', 'upload.css', 'upload.js', 'upload-setup.html', 'index.html', 'app.js', 'register-sw.js', 'styles.css', 'sw.js', 'manifest.json',
   'robots.txt', 'logo.png', 'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png',
   'apple-touch-icon.png', 'icon-196.png', 'android-chrome-512x512.png', '1.png', '2.png', '3.png'];
 await rm(output, { recursive: true, force: true });
@@ -14,6 +14,10 @@ await mkdir(output, { recursive: true });
 for (const file of files) await copyFile(path.join(root, file), path.join(output, file));
 await writeFile(path.join(output, 'menu-data.js'), 'window.INITIAL_MENU = ' + JSON.stringify(snapshot).replaceAll('<','\\u003c') + ';\n');
 files.push('menu-data.js');
+for (const [source, target] of [['docs/specials-template.csv', 'specials-template.csv'], ['docs/google-apps-script.gs', 'google-apps-script.txt']]) {
+  await copyFile(path.join(root, source), path.join(output, target));
+  files.push(target);
+}
 await mkdir(path.join(output, 'assets'), { recursive: true });
 for (const file of await readdir(path.join(root, 'assets'))) {
   if (/\.(png|svg|webp)$/.test(file)) await copyFile(path.join(root, 'assets', file), path.join(output, 'assets', file));

@@ -1,0 +1,46 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:08.000
+Your specials. One simple place.
+Sheets for staff. A lightweight viewer for guests.
+
+2
+00:00:08.000 --> 00:00:16.000
+Make your restaurant’s copy.
+MIT permits commercial use of the code. Hosting has separate terms.
+
+3
+00:00:16.000 --> 00:00:28.000
+Start with your Google Sheet.
+Staff can edit familiar cells instead of changing website code.
+
+4
+00:00:28.000 --> 00:00:41.000
+Connect it with Apps Script.
+Visitors can read published specials without editing the spreadsheet.
+
+5
+00:00:41.000 --> 00:00:52.000
+Set your connection and address.
+Links, QR codes, and previews should belong to your restaurant.
+
+6
+00:00:52.000 --> 00:01:05.000
+Publish your first saved menu.
+The saved menu appears before the background Sheet update returns.
+
+7
+00:01:05.000 --> 00:01:16.000
+Add a photo. Skip the extra account.
+Small local files load quickly. Cloudinary is optional.
+
+8
+00:01:16.000 --> 00:01:26.000
+Daily changes happen in the Sheet.
+Refresh the deployment snapshot for major changes, not every cell edit.
+
+9
+00:01:26.000 --> 00:01:35.000
+Test it at an actual table.
+Full instructions and troubleshooting are in README.md.

@@ -1,0 +1,4 @@
+id,category,name,price,description,image,featured,available,order,video
+SP1,Specials,Your drink special,100,Replace with the actual ingredients.,,TRUE,FALSE,1,
+SP2,Specials,Your food special,150,Replace with the actual serving description.,,TRUE,FALSE,2,
+SP3,Specials,Your dessert special,75,Replace with the actual serving description.,,TRUE,FALSE,3,

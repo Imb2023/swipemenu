@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Set up your restaurant’s specials menu</title>
+  <link rel="stylesheet" href="guide.css">
+</head>
+<body>
+  <main>
+    <nav><a href="./">Menu example</a><a href="demos.html">Design demos</a></nav>
+    <p class="eyebrow">Restaurant setup · 95 seconds</p>
+    <h1>Your specials.<br>Ready for the table.</h1>
+    <p>Use a Google Sheet to update your offers and small photos to keep browsing fast. Guests browse here and order with their server.</p>
+    <video controls playsinline preload="none" poster="assets/setup-guide-poster.webp" aria-label="Captioned restaurant setup walkthrough">
+      <source src="media/setup-guide.mp4" type="video/mp4">
+      <track kind="captions" src="guide-captions.vtt" srclang="en" label="English">
+      <p><a href="media/setup-guide.mp4">Download the setup video</a>.</p>
+    </video>
+    <p class="note">Silent, with instructions on screen. Google and Vercel steps are instruction cards; the menu is a local example, not a recording of a signed-in account.</p>
+    <div class="links"><a href="https://github.com/Imb2023/swipemenu/blob/main/README.md">Follow the full written guide →</a><a href="https://github.com/Imb2023/swipemenu/blob/main/docs/video-transcript.md">Read the transcript</a><a href="media/setup-guide.mp4" download>Download video</a></div>
+    <section>
+      <h2>Start with these files</h2>
+      <ol>
+        <li><a href="https://github.com/Imb2023/swipemenu/fork">Create your own copy on GitHub.</a> The code uses the MIT license; hosting and photo rights have separate terms.</li>
+        <li><a href="specials-template.csv" download>Download the Sheet template.</a> Import it into a dedicated Google Sheet tab named <strong>Specials</strong>. Sample rows start hidden.</li>
+        <li><a href="google-apps-script.txt">Open the Apps Script template.</a> Follow the written guide to connect and deploy it, then configure your own site.</li>
+      </ol>
+    </section>
+    <section>
+      <h2>After setup, staff only edit the Sheet</h2>
+      <p>Change names, prices, descriptions, and photo links. Set <strong>available</strong> to <strong>FALSE</strong> when an offer sells out. The menu displays up to three available specials, sorted by <strong>order</strong>.</p>
+      <p>Allow about a minute plus Google’s response time for successful updates. If the app shows a saved menu, confirm availability with staff. Refresh the saved deployment snapshot for major menu changes.</p>
+    </section>
+  </main>
+</body>
+</html>
