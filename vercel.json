@@ -82,6 +82,15 @@
           "value": "no-cache"
         }
       ]
+    },
+    {
+      "source": "/demos.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ],
   "functions": {

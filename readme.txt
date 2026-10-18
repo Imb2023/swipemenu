@@ -162,3 +162,21 @@ Additional checks: node --test tests/menu.test.mjs; python3 tests/fast_menu.py.
 The latter deliberately holds the API request open to verify the first offer and
 price are usable before it responds. It also verifies an empty update removes the
 offer. This is a functional check, not a measured mobile-network speed score.
+
+Compare design demos
+--------------------
+Open /demos.html (also linked as Design demos in the live menu header). Swipe
+sideways or use tabs/arrows to compare Focus, Quick list, and Spotlight. Scroll
+inside a preview to see additional offers. Buttons compare 1, 3, or 5 demo offers.
+All sample prices and generated photos are labeled demo content. They do not
+publish new live specials or change the Google Sheet. Three offers is a practical
+starting hypothesis; test with actual guests rather than assuming an optimum.
+Generated media is documented in media/DEMO-ASSETS.md. Full photos are 800px WebP;
+list layouts use 240px thumbnails. Other designs load media only when selected.
+To retire the review link later, remove the Design demos anchor from index.html;
+the standalone gallery can remain available for owner review.
+
+Gallery browser checks: python3 tests/demo_gallery.py (after npm run build).
+They check native horizontal touch swipes, vertical browsing, keyboard controls,
+1/3/5-item comparisons, three-row fit, asset dimensions and byte budgets, and
+inactive-design lazy loading at mobile and desktop sizes.

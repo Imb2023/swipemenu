@@ -1,6 +1,6 @@
 const CACHE = "instant-menu-v5";
 const ASSETS = ["./", "./index.html", "./app.js", "./menu-data.js", "./register-sw.js", "./styles.css", "./manifest.json",
-  "./logo.png", "./icon-196.png", "./android-chrome-512x512.png", "./favicon.ico", "./1.png", "./2.png", "./3.png"];
+  "./logo.png", "./icon-196.png", "./android-chrome-512x512.png", "./favicon.ico"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

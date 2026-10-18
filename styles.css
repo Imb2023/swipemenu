@@ -6,3 +6,5 @@
 @media(prefers-contrast:more){:root{--muted:#e1e2d8;--line:#ffffff80}.card-description,#modalDesc{color:var(--text)}.sheet{background:#171812}.scrim{background:#000d}.sheet,.scrim{backdrop-filter:none}}
 
 .offer-heading h2{text-transform:capitalize}
+
+.demo-link{margin-left:auto;color:var(--muted);font-size:.65rem;text-decoration:none;min-height:2.75rem;display:flex;align-items:center;padding:0 .4rem}.demo-link:hover{color:var(--accent)}
