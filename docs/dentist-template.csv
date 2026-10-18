@@ -1,0 +1,6 @@
+id,category,name,price,description,image,featured,available,order,video
+D1,Specials,Monday new-patient exam,79,Monday. Exam only. Imaging and treatment quoted separately.,,TRUE,FALSE,1,
+D2,Specials,Tuesday routine cleaning,99,Tuesday. For eligible routine-care patients after an exam. Deep cleaning quoted separately.,,TRUE,FALSE,2,
+D3,Specials,Wednesday introduction,0,Wednesday. Meet the team. No exam or treatment included.,,TRUE,FALSE,3,
+D4,Specials,Thursday whitening consultation,25,Thursday. Discuss suitability. Whitening treatment quoted separately.,,TRUE,FALSE,4,
+D5,Specials,Friday family exam,79,Friday. Per-person exam. Other services quoted separately.,,TRUE,FALSE,5,

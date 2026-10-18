@@ -1,0 +1,6 @@
+id,category,name,price,description,image,featured,available,order,video
+B1,Specials,Monday haircut,20,Monday 10am–2pm. A classic cut and finish.,,TRUE,FALSE,1,
+B2,Specials,Tuesday beard tidy,12,Tuesday 10am–2pm. A neat trim and line-up.,,TRUE,FALSE,2,
+B3,Specials,Wednesday cut & beard,30,"Wednesday 10am–3pm. Haircut, beard trim, and finish.",,TRUE,FALSE,3,
+B4,Specials,Thursday student cut,18,Thursday 10am–3pm. Student ID required.,,TRUE,FALSE,4,
+B5,Specials,Friday weekend finish,35,Friday 10am–1pm. Haircut and hot-towel finish.,,TRUE,FALSE,5,

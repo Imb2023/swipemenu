@@ -15,7 +15,7 @@ await mkdir(output, { recursive: true });
 for (const file of files) await copyFile(path.join(root, file), path.join(output, file));
 await writeFile(path.join(output, 'menu-data.js'), 'window.INITIAL_MENU = ' + JSON.stringify(snapshot).replaceAll('<','\\u003c') + ';\n');
 files.push('menu-data.js');
-for (const [source, target] of [['docs/specials-template.csv', 'specials-template.csv'], ['docs/google-apps-script.gs', 'google-apps-script.txt']]) {
+for (const [source, target] of [['docs/barber-template.csv', 'barber-template.csv'], ['docs/dentist-template.csv', 'dentist-template.csv'], ['docs/specials-template.csv', 'specials-template.csv'], ['docs/google-apps-script.gs', 'google-apps-script.txt']]) {
   await copyFile(path.join(root, source), path.join(output, target));
   files.push(target);
 }
@@ -61,3 +61,5 @@ await writeFile(path.join(output, 'sw.js'), worker.replace(/const CACHE = "[^"]+
 console.log(`Built static production site in ${output}`);
 
 await writePackageTemplate(new URL('../',import.meta.url),new URL('../dist/',import.meta.url));
+
+await writeFile(path.join(output,'version.json'),JSON.stringify({release:'weekday-business-demos-1',commit:process.env.VERCEL_GIT_COMMIT_SHA||process.env.GITHUB_SHA||null}));

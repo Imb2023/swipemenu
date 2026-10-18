@@ -16,6 +16,25 @@ The links above belong to this example restaurant setup. **Your restaurant needs
 
 Unzip and upload the package contents to your own GitHub repository, then import it into Vercel with build `npm run build` and output `dist`. Instructions are inside `START-HERE.md`. This creates a website package, not a Flutter/mobile binary. GitHub/hosting registration and deployment are separate owner steps. Only the Sheet link is sent to this site to check access; your branding and ZIP are assembled in your browser without saving a customer account.
 
+## Business examples and weekdays
+
+[Restaurant](https://swipemenu.vercel.app/demos.html?business=restaurant) · [Barber shop](https://swipemenu.vercel.app/demos.html?business=barber) · [Dental practice](https://swipemenu.vercel.app/demos.html?business=dentist)
+
+Each example has Focus, Quick list, and Spotlight designs. The barber and dental examples include a five-day sample offer board: choose **Full week** or a weekday. Download the matching template, replace the sample prices and services, then generate a package with that business type. The package changes the contact instructions to a barber or front desk.
+
+**Weekday labels are descriptive, not automatic scheduling.** Staff set `available` to `TRUE` for the offers they want live that day and `FALSE` for the rest. The live app still shows a maximum of three offers. Dental practices should confirm the actual services, eligibility, and pricing before publishing an offer.
+
+Business gallery checks: `python3 tests/business_demos.py` after `npm run build` verifies weekday filtering, business links, safe templates, and small/mobile/desktop layouts.
+
+### If Vercel still shows an old version
+
+1. Vercel → project → Settings → Git: verify the connected repository is your intended copy (this example uses `Imb2023/swipemenu`) and Production Branch is `main`.
+2. Deployments: confirm a new deployment exists for your latest commit and says **Ready**. For failures, open its Build Logs; a successful Docker workflow does not deploy Vercel.
+3. Use `npm run build`, output `dist`, framework **Other**. Make sure the project's Node runtime is **24.x**, and the `swipemenu.vercel.app` domain belongs to this production project.
+4. Redeploy the latest `main` commit if it was missed. Rebuilding an older deployment can keep old code; check its commit. After it is Ready, reopen `/demos.html` and refresh once. An existing installed/offline view can show saved content until it reconnects.
+
+`/version.json` identifies this release as `weekday-business-demos-1`; Vercel builds also include their commit ID. This is a way to verify the deployed files instead of guessing from a cached screen. Changing browser cache cannot publish a missing deployment.
+
 ## Start here
 
 | Who | What they do | How often |

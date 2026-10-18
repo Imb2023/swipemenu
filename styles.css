@@ -8,3 +8,5 @@
 .offer-heading h2{text-transform:capitalize}
 
 .demo-link{margin-left:auto;color:var(--muted);font-size:.65rem;text-decoration:none;min-height:2.75rem;display:flex;align-items:center;padding:0 .4rem}.demo-link:hover{color:var(--accent)}
+
+.demo-link{font-size:.75rem;color:var(--accent);font-weight:600}
