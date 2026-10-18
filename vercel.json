@@ -96,6 +96,9 @@
   "functions": {
     "api/menu.mjs": {
       "maxDuration": 30
+    },
+    "api/setup-check.mjs": {
+      "maxDuration": 30
     }
   }
 }

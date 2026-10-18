@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/production.test.mjs tests/upload-signature.test.mjs tests/menu.test.mjs tests/docs-template.test.mjs",
+    "test": "node --test tests/production.test.mjs tests/upload-signature.test.mjs tests/menu.test.mjs tests/docs-template.test.mjs tests/sheet.test.mjs",
     "sync-menu": "node scripts/sync-menu.mjs"
   },
   "engines": {

@@ -1,6 +1,7 @@
 import config from '../menu.config.json' with {type:'json'};
 import snapshot from '../menu.snapshot.json' with {type:'json'};
 import {selectSpecials} from '../lib/menu.mjs';
+import {readMenuSource} from '../lib/sheet.mjs';
 let latest = snapshot;
 let refreshed = 0;
 let pending;
@@ -12,9 +13,7 @@ export default async function handler(req,res) {
   res.setHeader('Vercel-CDN-Cache-Control','public, s-maxage=60, stale-while-revalidate=86400');
   if (Date.now()-refreshed > 60000) {
     pending ||= (async () => {
-      const response = await fetch(config.sheetUrl,{signal:AbortSignal.timeout(25000)});
-      if (!response.ok) throw new Error('Menu source unavailable');
-      const rows = selectSpecials(await response.json());
+      const rows = selectSpecials(await readMenuSource(config));
       latest = {rows,updatedAt:new Date().toISOString()};refreshed=Date.now();
     })().finally(() => {pending=undefined;});
     try {await pending;} catch {

@@ -1,3 +1,4 @@
+import {writePackageTemplate} from './package-template.mjs';
 import { copyFile, mkdir, readdir, rm, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -6,7 +7,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(root, 'dist');
 // Only public runtime files enter the deployment; tests and skills stay private.
 const snapshot = JSON.parse(await readFile(path.join(root, 'menu.snapshot.json'), 'utf8'));
-const files = ['guide.html', 'guide.css', 'guide-captions.vtt', 'demos.html', 'demos.css', 'demos.js', 'upload.html', 'upload.css', 'upload.js', 'upload-setup.html', 'index.html', 'app.js', 'register-sw.js', 'styles.css', 'sw.js', 'manifest.json',
+const files = ['setup.html', 'setup.js', 'zip.js', 'guide.html', 'guide.css', 'guide-captions.vtt', 'demos.html', 'demos.css', 'demos.js', 'upload.html', 'upload.css', 'upload.js', 'upload-setup.html', 'index.html', 'app.js', 'register-sw.js', 'styles.css', 'sw.js', 'manifest.json',
   'robots.txt', 'logo.png', 'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png',
   'apple-touch-icon.png', 'icon-196.png', 'android-chrome-512x512.png', '1.png', '2.png', '3.png'];
 await rm(output, { recursive: true, force: true });
@@ -58,3 +59,5 @@ for (const file of [...files, ...mediaFiles]) {hash.update(file); hash.update(aw
 const worker = await readFile(path.join(output, 'sw.js'), 'utf8');
 await writeFile(path.join(output, 'sw.js'), worker.replace(/const CACHE = "[^"]+";/, `const CACHE = "instant-menu-${hash.digest('hex').slice(0, 12)}";`));
 console.log(`Built static production site in ${output}`);
+
+await writePackageTemplate(new URL('../',import.meta.url),new URL('../dist/',import.meta.url));

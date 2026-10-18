@@ -10,6 +10,12 @@ Show a few specials on a guest’s phone: **photo, name, price, description, and
 
 The links above belong to this example restaurant setup. **Your restaurant needs its own copy, Sheet, and website address.** Demo food, photos, and prices are examples, not offers to copy into your live menu without checking them.
 
+## Quick package builder — IsmaSigns Specials
+
+[Open the setup wizard](https://swipemenu.vercel.app/setup.html). Enter a normal Google Sheet link, restaurant name, accent color, and currency symbol. The wizard checks the Sheet and downloads your personalized ZIP. No Apps Script or Cloudinary is needed for this route. Use a dedicated menu-only Sheet shared as **Anyone with the link → Viewer**; all workbook contents become readable. The existing column format still applies.
+
+Unzip and upload the package contents to your own GitHub repository, then import it into Vercel with build `npm run build` and output `dist`. Instructions are inside `START-HERE.md`. This creates a website package, not a Flutter/mobile binary. GitHub/hosting registration and deployment are separate owner steps. Only the Sheet link is sent to this site to check access; your branding and ZIP are assembled in your browser without saving a customer account.
+
 ## Start here
 
 | Who | What they do | How often |
